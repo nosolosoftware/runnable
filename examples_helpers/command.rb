@@ -4,8 +4,8 @@ require 'runnable'
 
 class Command < Runnable
 
-  def initialize( system )
-    super( system )
+  def initialize( command )
+    super( command )
   end
   
 end
