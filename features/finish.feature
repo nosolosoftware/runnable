@@ -1,16 +1,17 @@
-Feature: Check if a command finish correctly
+Feature: Check if a command return the correct code error
 
   As a developer who uses runnable
   I want to check if a process finished correctly
   In order to be able to warn about it
 
   Scenario: Command Finish correctly
-    Given a command is running
-    When a command finish with 0
-    Then a command finish correctly
+    Given "ls -alh" is running
+    When "ls -alh" finish
+    Then "ls -alh" should return 0
 
   Scenario: Command Finish anormally
-    Given a command is running
-    When a command finish with something but 0
-    Then a command finish anormally
+    Given "ls -option" is running
+    When "ls -option" finish
+    Then "ls -option" should not return 0
+
 

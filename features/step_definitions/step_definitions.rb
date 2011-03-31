@@ -1,12 +1,25 @@
-Given /^I have an executable command class$/ do
-  @command = Command.new
+Given /^"([^"]*)" is running$/ do |arg1|
+  # express the regexp above with the code you wish you had
+  
+  class Command < Runnable
+  end
+
+
+  @command = Mock.new ( 'command' )
+
+  
+
 end
 
-When /^I run the command$/ do
-  @command.run
+When /^"([^"]*)" finish$/ do |arg1|
+    pending # express the regexp above with the code you wish you had
 end
 
-Then /^the process has to be running$/ do
-  @command.status.should == :running
+Then /^"([^"]*)" should return (\d+)$/ do |arg1, arg2|
+    pending # express the regexp above with the code you wish you had
+end
+
+Then /^"([^"]*)" should not return (\d+)$/ do |arg1, arg2|
+    pending # express the regexp above with the code you wish you had
 end
 
