@@ -1,16 +1,23 @@
 class Runnable
-  attr_accessor :status, :pid
+  attr_reader :pid
   
-  def initialize( system )
-    @system = system
+  def initialize( command )
+    @command = command
     
-    @status = :stopped
+    @pid = nil
   end
   
   def run
-    @pid = @system.run_process
+    proc = IO.popen( @command )
+    @pid = proc.id
+  end
   
-    @status = :running if @status == :stopped
+  def stop
+    Process.kill("INT", @pid)
+  end
+  
+  def kill
+    Process.kill("KILL", @pid)
   end
   
 end
