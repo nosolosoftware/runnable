@@ -9,15 +9,15 @@ class Runnable
   
   def run
     proc = IO.popen( @command )
-    @pid = proc.id
+    @pid = proc.pid
   end
   
   def stop
-    Process.kill("INT", @pid)
+    Process.kill(:SIGINT, @pid)
   end
   
   def kill
-    Process.kill("KILL", @pid)
+    Process.kill(:SIGKILL, @pid)
   end
   
 end

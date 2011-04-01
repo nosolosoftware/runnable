@@ -19,10 +19,17 @@ describe Runnable do
     end
     
     it "should execute the command in the system" do
-      @my_command.run
+      #Comprobar que el comando se ejecuta sobre el sistema
+      
+      pending 
     end
     
-    it "should know the pid of the system process"    
+    it "should know the pid of the system process" do
+      #Comprobar que se almacena el pid y que es el correspondiente 
+      #al proceso que se ejecuto
+      
+      pending 
+    end    
   end
   
   describe "sending signals to a blocking process" do
@@ -32,11 +39,17 @@ describe Runnable do
     end
   
     it "should be stopped when I send a stop signal" do
-      @my_command.stop
+      #Comprobar que el proceso se para y se queda en el estado correcto
+      #@my_command.stop
+      
+      pending
     end
     
     it "should be killed when I send a kill signal" do
-      @my_command.kill
+      #Comprobar que el proceso se destruye y se queda en el estado correcto
+      #@my_command.kill
+      
+      pending
     end
   end
 end
