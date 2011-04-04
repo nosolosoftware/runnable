@@ -13,11 +13,21 @@ class Runnable
   end
   
   def stop
-    Process.kill(:SIGINT, @pid)
+    send_signal( :stop )
   end
   
   def kill
-    Process.kill(:SIGKILL, @pid)
+    send_signal( :kill )
   end
   
+  
+  protected
+  
+  def send_signal( signal )
+    if signal == :stop
+      Process.kill( :SIGINT, @pid )
+    elsif signal == :kill
+      Process.kill( :SIGKILL, @pid )
+    end
+  end  
 end

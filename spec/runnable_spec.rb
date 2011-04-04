@@ -20,15 +20,13 @@ describe Runnable do
     
     it "should execute the command in the system" do
       #Comprobar que el comando se ejecuta sobre el sistema
-      
       pending 
     end
     
     it "should know the pid of the system process" do
       #Comprobar que se almacena el pid y que es el correspondiente 
       #al proceso que se ejecuto
-      
-      pending 
+      pending
     end    
   end
   
@@ -49,6 +47,26 @@ describe Runnable do
       #Comprobar que el proceso se destruye y se queda en el estado correcto
       #@my_command.kill
       
+      pending
+    end
+  end
+  
+  describe "return termination codes" do
+    it "should return value 0 if termination was correct" do
+      #@my_command = Command.new( "ls -alh" )
+      
+      pending
+    end
+    
+    it "should not return a value 0 if termination was incorrect due to invalid parameters" do
+      #@my_command = Command.new( "ls -option" )
+      
+      pending
+    end
+  end
+  
+  describe "return stop signal" do
+    it "should return stop signal when execution ends correctly after sometime" do
       pending
     end
   end
