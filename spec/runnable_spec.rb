@@ -27,9 +27,13 @@ describe Runnable do
     end
     
     it "should know the pid of the system process" do
-      #Comprobar que se almacena el pid y que es el correspondiente 
-      #al proceso que se ejecuto
-      pending
+      
+      @my_command.run
+
+      @my_command.pid.should_not be_nil
+
+      Dir.exist?( "/proc/#{@my_command.pid}" ).should be_true
+
     end    
   end
   

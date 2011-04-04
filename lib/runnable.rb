@@ -23,7 +23,8 @@ class Runnable
   
   # Start the command
   def run
-    IO.popen( @command )
+    com = IO.popen( @command )
+    @pid = com.pid
   end
   
   # Stop the command 
