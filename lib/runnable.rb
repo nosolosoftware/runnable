@@ -1,8 +1,11 @@
 class Runnable
   attr_reader :pid
   
-  def initialize( command )
-    @command = command
+  def initialize( )
+    @command = self.class.to_s.to_lower
+    
+    # checks that command is in the PATH
+    # ...
     
     @pid = nil
   end

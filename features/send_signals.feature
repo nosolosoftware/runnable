@@ -13,3 +13,5 @@ Feature: send signals to a process
     Given I create a "grep" command process
     When I send the "kill" signal
     Then the process should not exist
+
+    # @todo: hace falta la distinción entre SIGINT y SIGKILL
