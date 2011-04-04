@@ -1,0 +1,2 @@
+class DC < Runnable
+end

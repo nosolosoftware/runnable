@@ -1,5 +1,3 @@
-
-
 class Grep < Runnable
 end
 

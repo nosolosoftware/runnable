@@ -3,11 +3,13 @@ require File.expand_path(File.join('.', 'spec_helper'), File.dirname(__FILE__))
 describe Runnable do
   describe "creating a command" do
     before( :each ) do
-      @my_command = Command.new( "ls" )
+      @my_command = LS.new
     end
     
-    it "should be able to be runned" do
-      @my_command.should respond_to(:run)      
+    it "should be able to be runned, stopped and killed" do
+      @my_command.should respond_to( :run )      
+      @my_command.should respond_to( :stop )
+      @my_command.should respond_to( :kill )
     end
   end
 
@@ -15,12 +17,14 @@ describe Runnable do
   describe "running system commands" do
   
     before( :each ) do
-      @my_command = Command.new( "ls" )
+      @my_command = Tail.new
     end
     
     it "should execute the command in the system" do
-      #Comprobar que el comando se ejecuta sobre el sistema
-      pending 
+      @my_command.run
+      
+      `ps -A | grep tail`.should match /^(\s(\d)+\s([a-zA-Z0-9?\/]*)(\s)+(\d\d:\d\d:\d\d)\s([a-zA-Z]*))$/
+      $6.should == "tail"
     end
     
     it "should know the pid of the system process" do
@@ -32,8 +36,6 @@ describe Runnable do
   
   describe "sending signals to a blocking process" do
     before( :each ) do
-      @my_command = Command.new( "grep" )
-      @my_command.run
     end
   
     it "should be stopped when I send a stop signal" do
