@@ -17,14 +17,13 @@ describe Runnable do
   describe "running system commands" do
   
     before( :each ) do
-      @my_command = Tail.new
+      @my_command = BC.new
     end
     
     it "should execute the command in the system" do
       @my_command.run
       
-      `ps -A | grep tail`.should match /^(\s(\d)+\s([a-zA-Z0-9?\/]*)(\s)+(\d\d:\d\d:\d\d)\s([a-zA-Z]*))$/
-      $6.should == "tail"
+      `ps -A | grep bc`.should match /^((\s)?(\d)+\s([a-zA-Z0-9?\/]*)(\s)+(\d\d:\d\d:\d\d)\sbc)$/
     end
     
     it "should know the pid of the system process" do

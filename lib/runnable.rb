@@ -12,8 +12,8 @@ class Runnable
   attr_reader :pid
   
   # 
-  def initialize( )
-    @command = self.class.to_s.to_lower
+  def initialize
+    @command = self.class.to_s.downcase
     
     # @todo: checks that command is in the PATH
     # ...
@@ -23,6 +23,7 @@ class Runnable
   
   # Start the command
   def run
+    IO.popen( @command )
   end
   
   # Stop the command 

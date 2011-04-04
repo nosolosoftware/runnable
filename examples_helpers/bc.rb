@@ -1,0 +1,2 @@
+class BC < Runnable
+end
