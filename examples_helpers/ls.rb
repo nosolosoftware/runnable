@@ -1,0 +1,3 @@
+class LS < Runnable
+end
+
