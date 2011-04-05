@@ -7,4 +7,5 @@ require 'ls'
 require 'dc'
 require 'grep'
 require 'bc'
+require 'yes'
  

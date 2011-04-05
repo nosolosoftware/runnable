@@ -1,0 +1,2 @@
+class Yes < Runnable
+end
