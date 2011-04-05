@@ -39,13 +39,20 @@ describe Runnable do
   
   describe "sending signals to a blocking process" do
     before( :each ) do
+      @my_command = BC.new
+      @my_command.run
     end
   
     it "should be stopped when I send a stop signal" do
       #Comprobar que el proceso se para y se queda en el estado correcto
-      #@my_command.stop
       
-      pending
+      @my_command.pid.should_not be_nil
+      Dir.exist?( "/proc/#{@my_command.pid}" ).should be_true
+      
+      @my_command.stop
+      
+      Dir.exist?( "/proc/#{@my_command.pid}" ).should_not be_true
+      
     end
     
     it "should be killed when I send a kill signal" do
