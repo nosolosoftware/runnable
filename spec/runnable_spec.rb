@@ -34,7 +34,11 @@ describe Runnable do
 
       Dir.exist?( "/proc/#{@my_command.pid}" ).should be_true
 
-    end    
+    end
+    
+    after( :each) do
+      @my_command.kill
+    end  
   end
   
   describe "sending signals to a blocking process" do
@@ -52,7 +56,6 @@ describe Runnable do
       @my_command.stop
       
       Dir.exist?( "/proc/#{@my_command.pid}" ).should_not be_true
-      
     end
     
     it "should be killed when I send a kill signal" do
@@ -61,6 +64,10 @@ describe Runnable do
       
       pending
     end
+    
+    after( :each) do
+      @my_command.kill
+    end 
   end
   
   describe "return termination codes" do
