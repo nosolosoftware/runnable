@@ -8,6 +8,9 @@
 #   ls = LS.new
 #   ls.start
 #
+
+require 'open3'
+
 class Runnable
   attr_accessor :pid
   
@@ -15,7 +18,7 @@ class Runnable
   def initialize( *opts )  
     @command = self.class.to_s.downcase
     
-    @opts = opts
+    @options = opts
     
     # @todo: checks that command is in the PATH
     # ...
@@ -26,9 +29,11 @@ class Runnable
   # Start the command
   def run 
     raise NoMethodError if RUBY_VERSION < "1.9.1"
-  
-    @pid = Process.spawn( @command + " " + @opts[0].to_s)
-    #Process.detach( @pid )
+    
+    sin, sout, serr, @wait_thread = Open3.popen3( @command + " " + @options[0].to_s )
+
+    @pid = @wait_thread[:pid]   
+    
   end
   
   # Stop the command 
@@ -46,7 +51,7 @@ class Runnable
   end
   
   def join
-    Process.waitpid( @pid )
+    @wait_thread.join()
   end
   
   protected
