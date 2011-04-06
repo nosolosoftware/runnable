@@ -9,7 +9,7 @@
 #   ls.start
 #
 class Runnable
-  attr_reader :pid
+  attr_accessor :pid
   
   # 
   def initialize

@@ -26,7 +26,7 @@ describe Runnable do
     
     it "should know the pid of the system process" do
       #Creamos la instancia del comando
-      @my_command = BC.new
+      @my_command = Yes.new
       
       #Lanzamos el proceso
       @my_command.run
@@ -69,12 +69,12 @@ describe Runnable do
   describe "sending signals to a blocking process" do 
     it "should be stopped when I send a stop signal" do 
       #Creamos la instancia del comando
-      @my_command = DC.new
+      @my_command = Yes.new
       
       #Lanzamos el proceso
       @my_command.run
       
-      @my_command.pid.should == `ps -A | grep dc`.split(" ")[0].to_i
+      @my_command.pid.should == `ps -A | grep #{@my_command.pid}`.split(" ")[0].to_i
        
       #Enviamos al proceso la señal de stop
       @my_command.stop
@@ -87,10 +87,6 @@ describe Runnable do
     it "should be killed when I send a kill signal" do      
       pending
     end
-    
-    after( :each ) do
-      @my_command.kill
-    end 
   end
   
   describe "return termination codes" do
