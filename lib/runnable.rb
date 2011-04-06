@@ -22,9 +22,11 @@ class Runnable
   end
   
   # Start the command
-  def run
-    com = IO.popen( @command )
-    @pid = com.pid
+  def run 
+    raise NoMethodError if RUBY_VERSION < "1.9.1"
+  
+    @pid = Process.spawn( @command )
+    Process.detach( @pid )
   end
   
   # Stop the command 

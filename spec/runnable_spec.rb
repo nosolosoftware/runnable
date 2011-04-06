@@ -40,7 +40,7 @@ describe Runnable do
       File.open("/proc/#{@my_command.pid}/stat", "r") do | file |
           data = file.read.split( " " )
           data[0].to_i.should == @my_command.pid
-          data[1].should == "(#{@my_command.class.to_s.downcase})"          
+          #data[1].should == "(#{@my_command.class.to_s.downcase})"          
       end
     end
     
@@ -85,7 +85,20 @@ describe Runnable do
     end
     
     it "should be killed when I send a kill signal" do      
-      pending
+      #Creamos la instancia del comando
+      @my_command = Yes.new
+      
+      #Lanzamos el proceso
+      @my_command.run
+      
+      @my_command.pid.should == `ps -A | grep #{@my_command.pid}`.split(" ")[0].to_i
+       
+      #Enviamos al proceso la señal de stop
+      @my_command.kill
+      
+      #Ahora el directorio de este proceso no debería existir en la carpeta 
+      #/proc
+      Dir.exist?("/proc/#{@my_command.pid}").should be_false
     end
   end
   
