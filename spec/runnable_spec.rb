@@ -119,4 +119,21 @@ describe Runnable do
       pending
     end
   end
+  
+  describe "controll the command execution" do
+    it "should stop the execution of parent until the child has exit" do
+      #Create and launch the command
+      @my_command = Sleep.new( 5 )
+      @my_command.run
+      
+      #The process should be executing
+      `ps -A | grep #{@my_command.pid}` =~ @ps_regexp
+      
+      #Waiting for end of child execution
+      @my_command.join
+      
+      #This should execute only if the child process has exited
+      true.should be_true
+    end
+  end 
 end

@@ -12,8 +12,10 @@ class Runnable
   attr_accessor :pid
   
   # 
-  def initialize
+  def initialize( *opts )  
     @command = self.class.to_s.downcase
+    
+    @opts = opts
     
     # @todo: checks that command is in the PATH
     # ...
@@ -25,8 +27,8 @@ class Runnable
   def run 
     raise NoMethodError if RUBY_VERSION < "1.9.1"
   
-    @pid = Process.spawn( @command )
-    Process.detach( @pid )
+    @pid = Process.spawn( @command + " " + @opts[0].to_s)
+    #Process.detach( @pid )
   end
   
   # Stop the command 
@@ -43,6 +45,9 @@ class Runnable
     send_signal( :kill )
   end
   
+  def join
+    Process.waitpid( @pid )
+  end
   
   protected
   
@@ -50,6 +55,8 @@ class Runnable
   # @param [Symbol] signal must be a symbol
   # @todo: @raise exeption
   def send_signal( signal )
+    Process.detach( @pid )
+    
     if signal == :stop
       Process.kill( :SIGINT, @pid )
     elsif signal == :kill
