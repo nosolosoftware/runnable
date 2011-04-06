@@ -23,8 +23,15 @@ class Runnable
   
   # Start the command
   def run
-    com = IO.popen( @command )
-    @pid = com.pid
+    # Start a new thread to be able to detach
+    @thread = Thread.new do
+      # Inside the thread, start the command
+      com = IO.popen( @command )
+      # And set the PID
+      @pid = com.pid
+      Process.detach( @pid )
+    end
+
   end
   
   # Stop the command 

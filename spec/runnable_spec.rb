@@ -26,7 +26,7 @@ describe Runnable do
     
     it "should know the pid of the system process" do
       #Creamos la instancia del comando
-      @my_command = BC.new
+      @my_command = DC.new
       
       #Lanzamos el proceso
       @my_command.run
