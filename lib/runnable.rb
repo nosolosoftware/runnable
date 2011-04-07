@@ -12,28 +12,51 @@
 require 'open3'
 
 class Runnable
+# extends Publisher
+# can_fire :stopped
+
   attr_accessor :pid
   
-  # 
-  def initialize( *opts )  
+  # Constructor
+  def initialize( *opts, delete_log = true )  
     @command = self.class.to_s.downcase
     
-    @options = opts
+    @options = opts.join( " " )
+    @delete_log = delete_log
     
     # @todo: checks that command is in the PATH
     # ...
     
     @pid = nil
+    @log_path = "/var/log/runnable/"
   end
   
   # Start the command
-  def run 
-    raise NoMethodError if RUBY_VERSION < "1.9.1"
+  def run
+  
+    stdin, stdout, stderr, @wait_thread = Open3.popen3( @command + " " + @options )
     
-    sin, sout, serr, @wait_thread = Open3.popen3( @command + " " + @options[0].to_s )
-
-    @pid = @wait_thread[:pid]   
+    @pid = @wait_thread.pid
     
+    # Check if log directory already exists 
+    # If not, the directory is created
+    create_log_directory
+    
+    @out_file = File.open( @log_path + "#{@command}_#{self.pid}.log", "a+" )  
+    
+    @err_thread = Thread.new do
+      stderr.each_line do | line | 
+        @out_file.write( "[#{Time.new.inspect} || [STDERR] || [#{@pid}]] #{line}" )
+      end
+    end
+    
+    @out_thread = Thread.new do
+      stdout.each_line{|line| 
+        @out_file.write( "[#{Time.new.inspect} || [STDOUT] || [#{@pid}]] #{line}" )
+      }
+    end
+            
+        
   end
   
   # Stop the command 
@@ -51,7 +74,12 @@ class Runnable
   end
   
   def join
-    @wait_thread.join()
+    @out_thread.join
+    @err_thread.join
+    @wait_thread.join
+    @out_file.close
+    
+    File.delete(@log_path + "#{@command}_#{self.pid}.log") if delete_log
   end
   
   protected
@@ -67,5 +95,9 @@ class Runnable
     elsif signal == :kill
       Process.kill( :SIGKILL, @pid )
     end
+  end
+  
+  def create_log_directory
+    Dir.mkdir(@log_path) unless Dir.exist?(@log_path)
   end  
 end

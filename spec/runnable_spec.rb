@@ -26,13 +26,15 @@ describe Runnable do
     
     it "should know the pid of the system process" do
       #Creamos la instancia del comando
-      @my_command = Yes.new
+      @my_command = BC.new
       
       #Lanzamos el proceso
       @my_command.run
     
       #Comprobamos que existe el directorio de nuestro proceso en la
       #carpeta /proc
+
+      @my_command.pid.should_not be_nil
       Dir.exists?("/proc/#{@my_command.pid}").should be_true
       
       #Ahora comprobamos que la información contenida en el proceso con el
@@ -46,7 +48,7 @@ describe Runnable do
     
     it "should execute the command in the system" do
       #Creamos la instancia del comando
-      @my_command = Yes.new
+      @my_command = BC.new
       
       #Lanzamos el proceso
       @my_command.run
@@ -69,7 +71,7 @@ describe Runnable do
   describe "sending signals to a blocking process" do 
     it "should be stopped when I send a stop signal" do 
       #Creamos la instancia del comando
-      @my_command = Yes.new
+      @my_command = BC.new
       
       #Lanzamos el proceso
       @my_command.run
@@ -86,7 +88,7 @@ describe Runnable do
     
     it "should be killed when I send a kill signal" do      
       #Creamos la instancia del comando
-      @my_command = Yes.new
+      @my_command = BC.new
       
       #Lanzamos el proceso
       @my_command.run
@@ -104,12 +106,10 @@ describe Runnable do
   
   describe "return termination codes" do
     it "should return value 0 if termination was correct" do
-      #@my_command = Command.new( "ls -alh" )
       pending
     end
     
     it "should not return a value 0 if termination was incorrect due to invalid parameters" do
-      #@my_command = Command.new( "ls -option" )
       pending
     end
   end
@@ -120,7 +120,7 @@ describe Runnable do
     end
   end
   
-  describe "controll the command execution" do
+  describe "control the command execution" do
     it "should stop the execution of parent until the child has exit" do
       #Create and launch the command
       @my_command = Sleep.new( 5 )
@@ -135,5 +135,47 @@ describe Runnable do
       #This should execute only if the child process has exited
       true.should be_true
     end
-  end 
+  end
+  
+  describe "redirect the stdout and stderr strems" do
+    it "should print the output of the command in a log file" do
+      @my_command = LS.new()
+      @my_command.run
+      
+      @my_command.join
+      
+      #Recuperamos el contenido del fichero de log      
+      my_command_output = []
+      
+      log = File.open("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log", "r") 
+      log.each_line do |line|
+        my_command_output.push line.split(" ").last
+      end
+      log.close
+      
+      #Recuperamos la salida del comando en el sistema
+      system_output = `ls`.split( "\n" )
+
+      system_output.should == my_command_output
+    end
+    
+    it "should print the standar error of the command in a log file" do
+      @my_command = LS.new( "-invalid_option" )
+      @my_command.run
+      
+      @my_command.join
+      
+      #Recuperamos el contenido del fichero de log 
+      log = File.open("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log", "r") 
+      my_command_output = log.read.split( "\n" )[0]
+      my_command_output =~ /\[[.]\]\s(\.+)/
+      my_command_output = $1
+      log.close
+      
+      #Recuperamos la salida del comando en el sistema
+      system_output = `ls -invalid_option`.split( "\n" )[0]
+
+      system_output.should == my_command_output
+    end
+  end
 end
