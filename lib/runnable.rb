@@ -10,10 +10,11 @@
 #
 
 require 'open3'
+require 'publisher'
 
 class Runnable
-# extends Publisher
-# can_fire :stopped
+  extend Publisher
+  can_fire :stopped
 
   attr_accessor :pid
   
@@ -48,18 +49,21 @@ class Runnable
       @delete_log = option_hash[:delete_log]
     end
 
+    subscribe :stopped do
+      prepare_to_close
+    end
+
   end
   
   # Start the command
   def run
+    # Check if log directory already exists 
+    # If not, the directory is created
+    create_log_directory  
   
     stdin, stdout, stderr, @wait_thread = Open3.popen3( @command + " " + @options )
     
     @pid = @wait_thread.pid
-    
-    # Check if log directory already exists 
-    # If not, the directory is created
-    create_log_directory
     
     @out_file = File.open( @log_path + "#{@command}_#{self.pid}.log", "a+" )  
     
@@ -70,12 +74,20 @@ class Runnable
     end
     
     @out_thread = Thread.new do
-      stdout.each_line{|line| 
+      stdout.each_line do | line | 
         @out_file.write( "[#{Time.new.inspect} || [STDOUT] || [#{@pid}]] #{line}" )
-      }
+      end
     end
-            
+    
+    @exit_thread = Thread.new do
+      begin
+        Process.wait( @pid )
+      rescue Exception
         
+      end
+     
+      fire :stopped
+    end    
   end
   
   # Stop the command 
@@ -93,11 +105,14 @@ class Runnable
   end
   
   def join
-    @out_thread.join
-    @err_thread.join
-    @wait_thread.join
-    prepare_to_close
-
+    # @out_thread.join
+    # @err_thread.join
+    # @wait_thread.join
+    @exit_thread.join
+  end
+ 
+  def exceptions
+    {}
   end
   
   protected
@@ -107,7 +122,6 @@ class Runnable
   # @todo: @raise exeption
   def send_signal( signal )
     Process.detach( @pid )
-    prepare_to_close
 
     if signal == :stop
       Process.kill( :SIGINT, @pid )
@@ -121,6 +135,9 @@ class Runnable
   end
 
   def prepare_to_close
+    # Check possible exceptions
+    hash_exp = exceptions 
+  
     @out_file.close
     if @delete_log == true
       File.delete(@log_path + "#{@command}_#{self.pid}.log")

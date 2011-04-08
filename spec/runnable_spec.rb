@@ -137,12 +137,13 @@ describe Runnable do
     end
   end
   
-  describe "redirect the stdout and stderr strems" do
+  describe "redirect the stdout and stderr streams" do
     it "should print the output of the command in a log file" do
       @my_command = LS.new( {:delete_log => false} )
       @my_command.run
       
       @my_command.join
+      
       
       #Recuperamos el contenido del fichero de log      
       my_command_output = []
@@ -159,11 +160,11 @@ describe Runnable do
       system_output.should == my_command_output
     end
     
-    it "should print the standar error of the command in a log file" do
+    it "should print the standart error of the command in a log file" do
       @my_command = LS.new(
          {:command_options => "-invalid_option",
-          :delete_log => false}
-                          )
+          :delete_log => false})
+          
       @my_command.run
       
       @my_command.join
