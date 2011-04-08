@@ -18,17 +18,36 @@ class Runnable
   attr_accessor :pid
   
   # Constructor
-  def initialize( *opts, delete_log = true )  
+  def initialize( option_hash= {} )
+    # keys :delete_log
+    #      :command_options
+    #      :log_path
+    
     @command = self.class.to_s.downcase
     
-    @options = opts.join( " " )
-    @delete_log = delete_log
+    # Set the default command option
+    # Empty by default
+    option_hash[:command_options] ||= ""
+    @options = option_hash[:command_options]
     
     # @todo: checks that command is in the PATH
     # ...
     
     @pid = nil
-    @log_path = "/var/log/runnable/"
+    
+    # Set the log path
+    # Default path is "/var/log/runnable"
+    option_hash[:log_path] ||= "/var/log/runnable/"
+    @log_path = option_hash[:log_path]
+
+    # Set the delete_log option
+    # true by default
+    if option_hash[:delete_log] == nil
+      @delete_log = true
+    else 
+      @delete_log = option_hash[:delete_log]
+    end
+
   end
   
   # Start the command
@@ -77,9 +96,8 @@ class Runnable
     @out_thread.join
     @err_thread.join
     @wait_thread.join
-    @out_file.close
-    
-    File.delete(@log_path + "#{@command}_#{self.pid}.log") if delete_log
+    prepare_to_close
+
   end
   
   protected
@@ -89,7 +107,8 @@ class Runnable
   # @todo: @raise exeption
   def send_signal( signal )
     Process.detach( @pid )
-    
+    prepare_to_close
+
     if signal == :stop
       Process.kill( :SIGINT, @pid )
     elsif signal == :kill
@@ -99,5 +118,12 @@ class Runnable
   
   def create_log_directory
     Dir.mkdir(@log_path) unless Dir.exist?(@log_path)
-  end  
+  end
+
+  def prepare_to_close
+    @out_file.close
+    if @delete_log == true
+      File.delete(@log_path + "#{@command}_#{self.pid}.log")
+    end
+  end
 end

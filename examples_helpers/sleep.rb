@@ -1,5 +1,5 @@
 class Sleep < Runnable
-  def initialize( time )
-    super( time )  
+  def initialize( opts = {} )
+    super( opts )
   end
 end

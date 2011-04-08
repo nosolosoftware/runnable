@@ -1,6 +1,6 @@
 class LS < Runnable
 
-  def initialize( *opts )
+  def initialize( opts = {} )
     super( opts )
   end
 

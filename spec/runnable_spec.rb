@@ -123,7 +123,7 @@ describe Runnable do
   describe "control the command execution" do
     it "should stop the execution of parent until the child has exit" do
       #Create and launch the command
-      @my_command = Sleep.new( 5 )
+      @my_command = Sleep.new( {:command_options => "1"} )
       @my_command.run
       
       #The process should be executing
@@ -139,7 +139,7 @@ describe Runnable do
   
   describe "redirect the stdout and stderr strems" do
     it "should print the output of the command in a log file" do
-      @my_command = LS.new()
+      @my_command = LS.new( {:delete_log => false} )
       @my_command.run
       
       @my_command.join
@@ -160,7 +160,10 @@ describe Runnable do
     end
     
     it "should print the standar error of the command in a log file" do
-      @my_command = LS.new( "-invalid_option" )
+      @my_command = LS.new(
+         {:command_options => "-invalid_option",
+          :delete_log => false}
+                          )
       @my_command.run
       
       @my_command.join
@@ -177,5 +180,29 @@ describe Runnable do
 
       system_output.should == my_command_output
     end
+
   end
+  describe "managing log files" do
+    it "Should delete log files by default" do
+      @my_command = BC.new()
+
+      
+      @my_command.run
+      @my_command.kill
+
+      File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_false
+      
+    end
+
+    it "should not delete log files if we don't want it explicity" do
+      @my_command = BC.new( {:delete_log => false} )
+
+      @my_command.run
+      @my_command.kill
+
+      File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_true
+      
+    end
+  end
+
 end
