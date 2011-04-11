@@ -166,7 +166,7 @@ describe Runnable do
           :delete_log => false})
           
       @my_command.run
-      
+
       @my_command.join
       
       #Recuperamos el contenido del fichero de log 
@@ -203,6 +203,19 @@ describe Runnable do
 
       File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_true
       
+    end
+  end
+
+  describe "controlling exceptions" do
+    it "should not return any exceptions array" do
+      @my_command = LS.new( {:command_options => '-lah', :delete_log => false} )
+
+      @my_command.run
+
+      @my_command.subscribe :fail do
+        fail
+      end
+          
     end
   end
 

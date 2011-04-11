@@ -14,7 +14,10 @@ require 'publisher'
 
 class Runnable
   extend Publisher
+  
   can_fire :stopped
+  can_fire :finish
+  can_fire :fail
 
   attr_accessor :pid
   
@@ -31,11 +34,6 @@ class Runnable
     option_hash[:command_options] ||= ""
     @options = option_hash[:command_options]
     
-    # @todo: checks that command is in the PATH
-    # ...
-    
-    @pid = nil
-    
     # Set the log path
     # Default path is "/var/log/runnable"
     option_hash[:log_path] ||= "/var/log/runnable/"
@@ -49,10 +47,16 @@ class Runnable
       @delete_log = option_hash[:delete_log]
     end
 
+     # @todo: checks that command is in the PATH
+    # ...
+    
+    @pid = nil
+    
+    @excep_array = []
+
     subscribe :stopped do
       prepare_to_close
     end
-
   end
   
   # Start the command
@@ -64,11 +68,37 @@ class Runnable
     stdin, stdout, stderr, @wait_thread = Open3.popen3( @command + " " + @options )
     
     @pid = @wait_thread.pid
+
+    @exit_thread = Thread.new do
+      begin
+        Process.wait( @pid )
+        @exit_status = $?.exitstatus
+        
+        if @exit_status != 0 then
+          @excep_array << SystemCallError.new( @exit_status )
+          
+          fire :fail, @excep_array
+        else
+          fire :finish
+        end
+      rescue Exception
+        puts "EXCEPTION!!!!!!"
+      end
+      
+      fire :stopped
+    end    
     
     @out_file = File.open( @log_path + "#{@command}_#{self.pid}.log", "a+" )  
     
     @err_thread = Thread.new do
-      stderr.each_line do | line | 
+      stderr.each_line do | line |
+      
+        exceptions.each do | reg_expr, value |
+          if reg_expr =~ line then
+            @excep_array << value.new( $1 )
+          end
+        end
+       
         @out_file.write( "[#{Time.new.inspect} || [STDERR] || [#{@pid}]] #{line}" )
       end
     end
@@ -79,15 +109,7 @@ class Runnable
       end
     end
     
-    @exit_thread = Thread.new do
-      begin
-        Process.wait( @pid )
-      rescue Exception
-        
-      end
-     
-      fire :stopped
-    end    
+    
   end
   
   # Stop the command 
