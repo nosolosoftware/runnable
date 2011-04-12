@@ -10,6 +10,5 @@ class LS < Runnable
     /ls: error(.*)/ => IOError
     }
   end
-
 end
 

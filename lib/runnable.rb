@@ -9,14 +9,13 @@
 #   ls.start
 #
 
-require 'open3'
+require 'rubygems'
 require 'publisher'
 
 class Runnable
   extend Publisher
 
-  can_fire :fail
-  can_fire :finish
+  can_fire :fail, :finish
 
   attr_accessor :pid
   
@@ -79,7 +78,11 @@ class Runnable
         err_wr.close
 
         err_rd.each_line do | line |
-          
+          exceptions.each do | reg_expr, value |
+            if reg_expr =~ line then
+              @excep_array << value.new( $1 )
+            end
+          end
         
           log.write( "[#{Time.new.inspect} || [STDERR] || [#{@pid}]] #{line}" )
         end
@@ -92,12 +95,21 @@ class Runnable
       
       delete_log
       
+      Process.wait( @pid, Process::WUNTRACED )
+      
+      exit_status = $?.exitstatus
+      
+      if exit_status != 0
+        @excep_array << SystemCallError.new( exit_status )
+      end
+      
       if @excep_array.empty? then
         fire :finish
       else
         fire :fail, @excep_array
       end
       
+      Process.detach( @pid )
     end
     
     #Funcion uberguarra que nos permite que todo funcione

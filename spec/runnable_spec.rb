@@ -157,6 +157,7 @@ describe Runnable do
       #Recuperamos la salida del comando en el sistema
       system_output = `ls`.split( "\n" )
 
+
       system_output.should == my_command_output
     end
     
@@ -177,6 +178,9 @@ describe Runnable do
       log.close
       
       #Recuperamos la salida del comando en el sistema
+      #La ejecucion del comando para hacer la comprobación
+      #saca un error por stderr, que es el que se muestra al
+      #ejecutar los tests mediante una terminal
       system_output = `ls -invalid_option`.split( "\n" )[0]
 
       system_output.should == my_command_output
@@ -212,7 +216,27 @@ describe Runnable do
 
       @my_command.run
 
-      @my_command.subscribe :fail do
+      @my_command.when :fail do
+        fail
+      end
+      
+      @my_command.when :finish do
+        true.should be_true
+      end
+          
+    end
+    
+    it "should return an argument exception" do
+      @my_command = LS.new( {:command_options => '-invalid_option', :delete_log => false} )
+
+      @my_command.run
+
+      @my_command.when :finish do
+        fail
+      end
+      
+      @my_command.when :fail do |array|
+        #array.empty?.should_not be_true        
         fail
       end
           
