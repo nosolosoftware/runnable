@@ -77,6 +77,7 @@ describe Runnable do
       @my_command.run
       
       @my_command.pid.should == `ps -A | grep #{@my_command.pid}`.split(" ")[0].to_i
+      Dir.exist?("/proc/#{@my_command.pid}").should be_true
        
       #Enviamos al proceso la señal de stop
       @my_command.stop
@@ -94,6 +95,7 @@ describe Runnable do
       @my_command.run
       
       @my_command.pid.should == `ps -A | grep #{@my_command.pid}`.split(" ")[0].to_i
+      Dir.exist?("/proc/#{@my_command.pid}").should be_true
        
       #Enviamos al proceso la señal de stop
       @my_command.kill
@@ -122,18 +124,27 @@ describe Runnable do
   
   describe "control the command execution" do
     it "should stop the execution of parent until the child has exit" do
-      #Create and launch the command
-      @my_command = Sleep.new( {:command_options => "1"} )
-      @my_command.run
-      
-      #The process should be executing
-      `ps -A | grep #{@my_command.pid}` =~ @ps_regexp
-      
-      #Waiting for end of child execution
-      @my_command.join
-      
-      #This should execute only if the child process has exited
-      true.should be_true
+      [0, 1, 3, 6].each { |seconds|
+
+        #Create and launch the command
+        @my_command = Sleep.new( {:command_options => seconds} )
+
+        time_before = Time.now
+        @my_command.run
+        
+        #The process should be executing
+        `ps -A | grep #{@my_command.pid}` =~ @ps_regexp
+        
+        #Waiting for end of child execution
+        @my_command.join
+        time_after = Time.now
+        
+        # Total seconts difference between both times
+        total_time = time_after - time_before
+
+        #This should execute only if the child process has exited
+        total_time.round.should == seconds 
+      }
     end
   end
   
@@ -161,7 +172,7 @@ describe Runnable do
       system_output.should == my_command_output
     end
     
-    it "should print the standart error of the command in a log file" do
+    it "should print the standard error of the command in a log file" do
       @my_command = LS.new(
          {:command_options => "-invalid_option",
           :delete_log => false})
