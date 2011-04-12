@@ -30,7 +30,7 @@ describe Runnable do
       
       #Lanzamos el proceso
       @my_command.run
-    
+
       #Comprobamos que existe el directorio de nuestro proceso en la
       #carpeta /proc
 

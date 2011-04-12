@@ -14,10 +14,9 @@ require 'publisher'
 
 class Runnable
   extend Publisher
-  
-  can_fire :stopped
-  can_fire :finish
+
   can_fire :fail
+  can_fire :finish
 
   attr_accessor :pid
   
@@ -47,69 +46,63 @@ class Runnable
       @delete_log = option_hash[:delete_log]
     end
 
-     # @todo: checks that command is in the PATH
+    # @todo: checks that command is in the PATH
     # ...
     
     @pid = nil
-    
     @excep_array = []
-
-    subscribe :stopped do
-      prepare_to_close
-    end
+    #End of initialize instance variables
+    
+    
+    create_log_directory
   end
   
   # Start the command
   def run
-    # Check if log directory already exists 
-    # If not, the directory is created
-    create_log_directory  
-  
-    stdin, stdout, stderr, @wait_thread = Open3.popen3( @command + " " + @options )
-    
-    @pid = @wait_thread.pid
+    @run_thread = Thread.new do
+      out_rd, out_wr = IO.pipe
+      err_rd, err_wr = IO.pipe
+      
+      @pid = Process.spawn( "#{@command} #{@options}", { :out => out_wr, :err => err_wr } )
+      
+      log = File.open( "#{@log_path}#{@command}_#{@pid}.log", "a+" )
 
-    @exit_thread = Thread.new do
-      begin
-        Process.wait( @pid )
-        @exit_status = $?.exitstatus
-        
-        if @exit_status != 0 then
-          @excep_array << SystemCallError.new( @exit_status )
+      out_thread = Thread.new do
+        out_wr.close
+
+        out_rd.each_line do | line |
+          log.write( "[#{Time.new.inspect} || [STDOUT] || [#{@pid}]] #{line}" )
+        end
+      end
+
+      err_thread = Thread.new do
+        err_wr.close
+
+        err_rd.each_line do | line |
           
-          fire :fail, @excep_array
-        else
-          fire :finish
+        
+          log.write( "[#{Time.new.inspect} || [STDERR] || [#{@pid}]] #{line}" )
         end
-      rescue Exception
-        puts "EXCEPTION!!!!!!"
+      end
+
+      out_thread.join
+      err_thread.join
+
+      log.close
+      
+      delete_log
+      
+      if @excep_array.empty? then
+        fire :finish
+      else
+        fire :fail, @excep_array
       end
       
-      fire :stopped
-    end    
-    
-    @out_file = File.open( @log_path + "#{@command}_#{self.pid}.log", "a+" )  
-    
-    @err_thread = Thread.new do
-      stderr.each_line do | line |
-      
-        exceptions.each do | reg_expr, value |
-          if reg_expr =~ line then
-            @excep_array << value.new( $1 )
-          end
-        end
-       
-        @out_file.write( "[#{Time.new.inspect} || [STDERR] || [#{@pid}]] #{line}" )
-      end
     end
     
-    @out_thread = Thread.new do
-      stdout.each_line do | line | 
-        @out_file.write( "[#{Time.new.inspect} || [STDOUT] || [#{@pid}]] #{line}" )
-      end
+    #Funcion uberguarra que nos permite que todo funcione
+    while(@pid == nil)
     end
-    
-    
   end
   
   # Stop the command 
@@ -127,10 +120,7 @@ class Runnable
   end
   
   def join
-    # @out_thread.join
-    # @err_thread.join
-    # @wait_thread.join
-    @exit_thread.join
+    @run_thread.join
   end
  
   def exceptions
@@ -155,14 +145,11 @@ class Runnable
   def create_log_directory
     Dir.mkdir(@log_path) unless Dir.exist?(@log_path)
   end
-
-  def prepare_to_close
-    # Check possible exceptions
-    hash_exp = exceptions 
   
-    @out_file.close
+  
+  def delete_log
     if @delete_log == true
-      File.delete(@log_path + "#{@command}_#{self.pid}.log")
+      File.delete( "#{@log_path}#{@command}_#{@pid}.log" )
     end
   end
 end
