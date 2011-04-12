@@ -13,10 +13,11 @@ require 'rubygems'
 require 'publisher'
 
 class Runnable
+
   extend Publisher
-
+  
   can_fire :fail, :finish
-
+  
   attr_accessor :pid
   
   # Constructor
@@ -57,7 +58,7 @@ class Runnable
   end
   
   # Start the command
-  def run
+  def run    
     @run_thread = Thread.new do
       out_rd, out_wr = IO.pipe
       err_rd, err_wr = IO.pipe
@@ -92,7 +93,6 @@ class Runnable
       err_thread.join
 
       log.close
-      
       delete_log
       
       Process.wait( @pid, Process::WUNTRACED )
@@ -163,5 +163,5 @@ class Runnable
     if @delete_log == true
       File.delete( "#{@log_path}#{@command}_#{@pid}.log" )
     end
-  end
+  end  
 end

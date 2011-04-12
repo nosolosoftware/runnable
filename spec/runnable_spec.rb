@@ -214,8 +214,6 @@ describe Runnable do
     it "should not return any exceptions array" do
       @my_command = LS.new( {:command_options => '-lah', :delete_log => false} )
 
-      @my_command.run
-
       @my_command.when :fail do
         fail
       end
@@ -223,23 +221,24 @@ describe Runnable do
       @my_command.when :finish do
         true.should be_true
       end
-          
+
+      @my_command.run
+      @my_command.join
     end
     
     it "should return an argument exception" do
       @my_command = LS.new( {:command_options => '-invalid_option', :delete_log => false} )
-
-      @my_command.run
 
       @my_command.when :finish do
         fail
       end
       
       @my_command.when :fail do |array|
-        #array.empty?.should_not be_true        
-        fail
+        array.empty?.should_not be_true
       end
-          
+
+      @my_command.run 
+      @my_command.join
     end
   end
 

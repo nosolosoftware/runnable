@@ -6,8 +6,7 @@ class LS < Runnable
   
   def exceptions
     { 
-    /ls: invalid(.*) (.*)/ => ArgumentError,
-    /ls: error(.*)/ => IOError
+    /ls: (.*)/ => ArgumentError
     }
   end
 end
