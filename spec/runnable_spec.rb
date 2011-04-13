@@ -156,19 +156,20 @@ describe Runnable do
       @my_command.join
       
       
-      #Recuperamos el contenido del fichero de log      
+      # Recover the content of the log file      
       my_command_output = []
       
       log = File.open("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log", "r") 
       log.each_line do |line|
+        # Get the last part of each line in the log file
         my_command_output.push line.split(" ").last
       end
       log.close
       
-      #Recuperamos la salida del comando en el sistema
+      # Get the system command output
       system_output = `ls`.split( "\n" )
 
-
+      # System command and log file output should be the same
       system_output.should == my_command_output
     end
     
@@ -181,18 +182,22 @@ describe Runnable do
 
       @my_command.join
       
-      #Recuperamos el contenido del fichero de log 
+      # Recover the content of the log file 
+      my_command_output = []
+
       log = File.open("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log", "r") 
-      my_command_output = log.read.split( "\n" )[0]
-      my_command_output =~ /\[[.]\]\s(\.+)/
-      my_command_output = $1
+      log.each_line do |line|
+        # Get the non matched part of the line
+        line =~ /\[[.]\]\s(\.+)/
+        my_command_output.push $1
+      end
       log.close
       
-      #Recuperamos la salida del comando en el sistema
-      #La ejecucion del comando para hacer la comprobación
-      #saca un error por stderr, que es el que se muestra al
-      #ejecutar los tests mediante una terminal
-      system_output = `ls -invalid_option`.split( "\n" )[0]
+      # Get the system command output
+      # This execution print in stderr
+      # the error code which is seen
+      # when test are executed
+      system_output = `ls -invalid_option`.split( "\n" )
 
       system_output.should == my_command_output
     end
@@ -204,8 +209,12 @@ describe Runnable do
 
       
       @my_command.run
-      @my_command.kill
 
+      # Check that log file exist
+      File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_true
+ 
+      @my_command.kill
+      # Check if log file is deleted
       File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_false
       
     end
@@ -214,8 +223,12 @@ describe Runnable do
       @my_command = BC.new( {:delete_log => false} )
 
       @my_command.run
-      @my_command.kill
+      
+      # Check that log file exist
+      File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_true
 
+      @my_command.kill
+      # Check that log file is removed
       File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_true
       
     end
@@ -224,11 +237,15 @@ describe Runnable do
   describe "controlling exceptions" do
     it "should not return any exceptions array" do
       @my_command = LS.new( {:command_options => '-lah', :delete_log => false} )
+      
+      # Set what must happen when getting a fire
 
+      # Example should fail if we get a fire :fail
       @my_command.when :fail do
         fail
       end
-      
+
+      # Example should pass when we get a fire :finish
       @my_command.when :finish do
         true.should be_true
       end
@@ -239,12 +256,16 @@ describe Runnable do
     
     it "should return an argument exception" do
       @my_command = LS.new( {:command_options => '-invalid_option', :delete_log => false} )
-
+      
+      # Set what must happen when getting a fire
+      
+      # if we get a finish publish, it should fail!
       @my_command.when :finish do
         fail
       end
-      
+      # if we get a :fail publish, we go throught the good way
       @my_command.when :fail do |array|
+        # Exceptions array must not be empty, because we failed :P
         array.empty?.should_not be_true
       end
 
