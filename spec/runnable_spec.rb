@@ -6,6 +6,8 @@ describe Runnable do
       @my_command = LS.new
     end
     
+    # We ensure the instance is created with the appropiates methods
+    # defined early
     it "should be able to be runned, stopped and killed" do
       @my_command.should respond_to( :run )      
       @my_command.should respond_to( :stop )
@@ -17,52 +19,57 @@ describe Runnable do
   describe "running system commands" do
     before( :each ) do
       # Expresion regular para comprobar contra la salida de 'ps -A'
-      # $1 debe ser el PID del proceso
-      # $2 debe ser el TTY
-      # $3 debe ser el TIME
-      # $4 debe ser el nombre del comando CMD
+      # Regular expresion used to match the 'ps -A' output
+      # $1 indicates the process PID
+      # $2 indicates which terminal the process is running on (TTY)
+      # $3 indicates the amount of CPU time that the process has been running (TIME)
+      # $4 indicates the name of the command
       @ps_regexp = /^\s?(\d+)\s([a-zA-Z0-9?\/]*)\s+(\d+:\d+:\d+)\s(\w+)$/
     end
     
+    # Test to confirm that the retrieved PID from instance matches the real
+    # process PID in the system 
     it "should know the pid of the system process" do
-      #Creamos la instancia del comando
+    
+      # Create a new instance of a command
       @my_command = BC.new
       
-      #Lanzamos el proceso
+      # Run the process
       @my_command.run
 
-      #Comprobamos que existe el directorio de nuestro proceso en la
-      #carpeta /proc
-
+      # The process PID should be known
       @my_command.pid.should_not be_nil
+      
+      # And a new directory should be created in the system folder '/proc/'
+      # containing all the information refered to our process
       Dir.exists?("/proc/#{@my_command.pid}").should be_true
       
-      #Ahora comprobamos que la información contenida en el proceso con el
-      #PID que nos devuelve la instancia concuerda con lo esperado
+      # We double-check the retreived information against the stat file
       File.open("/proc/#{@my_command.pid}/stat", "r") do | file |
-          data = file.read.split( " " )
-          data[0].to_i.should == @my_command.pid
-          #data[1].should == "(#{@my_command.class.to_s.downcase})"          
+        data = file.read.split( " " )
+        data[0].to_i.should == @my_command.pid
+        data[1].should == "(#{@my_command.class.to_s.downcase})"          
       end
+      
     end
     
+    # Test to check if our process instance is really executing a system command
     it "should execute the command in the system" do
-      #Creamos la instancia del comando
       @my_command = BC.new
-      
-      #Lanzamos el proceso
       @my_command.run
        
-      #Comprobamos que existe un proceso en el sistema con el pid devuelto
-      #que asumimos como correcto gracias al test anterior
+      # Look for a system process with the PID retrieved from our instance, 
+      # which is assumed to be correct due previous test
       `ps -A | grep #{@my_command.pid}` =~ @ps_regexp
       
-      #Comprobamos que el pid devuelto es el mismo por el que preguntamos
+      # Confirm if the match is correct cheking the known PID 
       $1.to_i.should == @my_command.pid
-      #Comprobamos que el nombre del proceso es el correcto
+      
+      # Check if the process name is the same of our command class
       $4.should == @my_command.class.to_s.downcase      
     end
     
+    # As we are using blocking commands, we need to terminate the execution
     after( :each ) do
       @my_command.kill
     end  
@@ -70,38 +77,33 @@ describe Runnable do
   
   describe "sending signals to a blocking process" do 
     it "should be stopped when I send a stop signal" do 
-      #Creamos la instancia del comando
       @my_command = BC.new
-      
-      #Lanzamos el proceso
       @my_command.run
       
-      @my_command.pid.should == `ps -A | grep #{@my_command.pid}`.split(" ")[0].to_i
+      # As our process is running, there should be a directory in folder '/proc'
+      # containing all the information related to our process
       Dir.exist?("/proc/#{@my_command.pid}").should be_true
        
-      #Enviamos al proceso la señal de stop
+      # We send the stop command to our process
       @my_command.stop
       
-      #Ahora el directorio de este proceso no debería existir en la carpeta 
-      #/proc
+      # Now that process has been stopped, the system should terminates it
+      # and the directory with process information should not exist
       Dir.exist?("/proc/#{@my_command.pid}").should be_false
     end
     
     it "should be killed when I send a kill signal" do      
-      #Creamos la instancia del comando
-      @my_command = BC.new
+      # This test is very similar to previous one, we just send the kill signal
+      # instead of stop signal
       
-      #Lanzamos el proceso
+      @my_command = BC.new
       @my_command.run
       
-      @my_command.pid.should == `ps -A | grep #{@my_command.pid}`.split(" ")[0].to_i
       Dir.exist?("/proc/#{@my_command.pid}").should be_true
        
-      #Enviamos al proceso la señal de stop
+      # We send the kill command to our process
       @my_command.kill
       
-      #Ahora el directorio de este proceso no debería existir en la carpeta 
-      #/proc
       Dir.exist?("/proc/#{@my_command.pid}").should be_false
     end
   end
@@ -124,27 +126,26 @@ describe Runnable do
   
   describe "control the command execution" do
     it "should stop the execution of parent until the child has exit" do
-      [0, 1, 3, 6].each { |seconds|
-
-        #Create and launch the command
+      [0, 1, 3, 6].each do |seconds|
+        # Create and launch the command
         @my_command = Sleep.new( {:command_options => seconds} )
 
         time_before = Time.now
         @my_command.run
         
-        #The process should be executing
+        # The process should be executing
         `ps -A | grep #{@my_command.pid}` =~ @ps_regexp
         
-        #Waiting for end of child execution
+        # Waiting for end of child execution
         @my_command.join
         time_after = Time.now
         
         # Total seconts difference between both times
         total_time = time_after - time_before
 
-        #This should execute only if the child process has exited
+        # This should execute only if the child process has exited
         total_time.round.should == seconds 
-      }
+      end
     end
   end
   
