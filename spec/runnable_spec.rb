@@ -189,18 +189,23 @@ describe Runnable do
       log = File.open("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log", "r") 
       log.each_line do |line|
         # Get the non matched part of the line
-        line =~ /\[[.]\]\s(\.+)/
-        my_command_output.push $1
+        line =~ /\[.*\]\s(.+)/
+        my_command_output << $1
       end
       log.close
       
       # Get the system command output
-      # This execution print in stderr
-      # the error code which is seen
-      # when test are executed
-      system_output = `ls -invalid_option`.split( "\n" )
 
-      system_output.should == my_command_output
+      # Get pipes to redirect IO
+      rd, wr = IO.pipe
+
+      # Call to command system
+      Kernel.system( 'ls -invalid_option', :err => wr )
+      wr.close
+      
+      
+      my_command_output.should == rd.read.split( "\n" )
+     
     end
 
   end
