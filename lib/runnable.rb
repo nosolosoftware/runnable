@@ -18,7 +18,7 @@ class Runnable
   
   can_fire :fail, :finish
   
-#  attr_accessor :pid
+  attr_reader :pid
   
   # Constructor
   # @param [Hash] option_hash Options
@@ -64,17 +64,18 @@ class Runnable
   # Start the command
   def run
     @pid_mutex = Mutex.new
+    out_rd, out_wr = IO.pipe
+    err_rd, err_wr = IO.pipe
+
+    @pid = Process.spawn( "#{@command} #{@options}", { :out => out_wr, :err => err_wr } )
+
+    create_logs(:out => [out_wr, out_rd], :err => [err_wr, err_rd])
+
     @run_thread = Thread.new do
-      out_rd, out_wr = IO.pipe
-      err_rd, err_wr = IO.pipe
-
-      @pid_mutex.synchronize {
-        @pid = Process.spawn( "#{@command} #{@options}", { :out => out_wr, :err => err_wr } )
-      }
-
-      create_logs(:out => [out_wr, out_rd], :err => [err_wr, err_rd])
-      
       Process.wait( @pid, Process::WUNTRACED )
+
+      @output_threads.each{ |thread| thread.join }
+      delete_log
 
       exit_status = $?.exitstatus
       
@@ -87,17 +88,10 @@ class Runnable
       else
         fire :fail, @excep_array
       end
+
     end
   end
   
-  def pid
-    Thread.new { 
-      Thread.pass
-      @pid_mutex.lock 
-    }.join if @pid == nil
-    return @pid
-  end
-
   # Stop the command 
   # @return nil
   # @todo: @raise exeption
@@ -127,17 +121,15 @@ class Runnable
   # @param [Symbol] signal must be a symbol
   # @todo: @raise exeption
   def send_signal( signal )
-    Process.detach( pid )
-
     if signal == :stop
-      Process.kill( :SIGINT, pid )
+      Process.kill( :SIGINT, @pid )
     elsif signal == :kill
-      Process.kill( :SIGKILL, pid )
+      Process.kill( :SIGKILL, @pid )
     end
   end
   
   def create_logs(outputs = {})
-    FileUtils.touch "#{@log_path}#{@command}_#{pid}.log" # Create an empty file for logging
+    FileUtils.touch "#{@log_path}#{@command}_#{@pid}.log" # Create an empty file for logging
 
     @output_threads = []
     outputs.each { |output_name, pipes|
@@ -145,8 +137,8 @@ class Runnable
         pipes[0].close
 
         pipes[1].each_line do |line|
-          File.open("#{@log_path}#{@command}_#{pid}.log", "a") do |log_file|
-            log_file.puts( "[#{Time.new.inspect} || [STD#{output_name.to_s.upcase} || [#{pid}]] #{line}" )
+          File.open("#{@log_path}#{@command}_#{@pid}.log", "a") do |log_file|
+            log_file.puts( "[#{Time.new.inspect} || [STD#{output_name.to_s.upcase} || [#{@pid}]] #{line}" )
           end
 
           exceptions.each do | reg_expr, value |
@@ -157,10 +149,6 @@ class Runnable
         end
       end
     }
-
-    @output_threads.each{ |thread| thread.join }
-
-    delete_log
   end
 
 
@@ -171,7 +159,7 @@ class Runnable
   
   def delete_log
     if @delete_log == true
-      File.delete( "#{@log_path}#{@command}_#{pid}.log" )
+      File.delete( "#{@log_path}#{@command}_#{@pid}.log" )
     end
   end  
 end
