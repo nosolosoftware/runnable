@@ -18,8 +18,12 @@ class Runnable
   
   can_fire :fail, :finish
   
-  attr_reader :pid
-  
+  attr_reader :pid, :owner, :group, :pwd
+
+  # Class variable to store all instances
+  @@processes = Hash.new
+
+
   # Constructor
   # @param [Hash] option_hash Options
   # @option option_hash :delete_log (true) Delete the log after execution
@@ -59,6 +63,7 @@ class Runnable
     
     
     create_log_directory
+
   end
   
   # Start the command
@@ -69,7 +74,24 @@ class Runnable
 
     @pid = Process.spawn( "#{@command} #{@options}", { :out => out_wr, :err => err_wr } )
 
+    # Include instance in class variable
+    @@processes[@pid] = self
+
+    # Satuts Variables
+    # PWD: Current Working Directory get by /proc/@pid/cwd
+    @pwd = File.readlink( "/proc/#{@pid}/cwd" )
+
+    # Prepare the file to be read
+    file_status = File.open( "/proc/#{@pid}/status" ).read.split( "\n" )
+    # Owner: Read the owner of the process from /proc/@pid/status
+    @owner = file_status[6].split( " " )[1]
+    # Group: Read the Group owner from /proc/@pid/status
+    @group = file_status[7].split( " " )[1]
+   
+
     create_logs(:out => [out_wr, out_rd], :err => [err_wr, err_rd])
+    
+
 
     @run_thread = Thread.new do
       Process.wait( @pid, Process::WUNTRACED )
@@ -89,6 +111,8 @@ class Runnable
         fire :fail, @excep_array
       end
 
+      # This instance is finished and we remove it
+      @@processes[@pid] = nil
     end
   end
   
@@ -108,6 +132,24 @@ class Runnable
   
   def join
     @run_thread.join
+  end
+
+  # Calculate the estimated memory usage in Kb
+  # @return Number
+  def mem
+    File.open( "/proc/#{@pid}/status" ).read.split( "\n" )[11].split( " " )[1].to_i
+  end
+
+  # Calculate the estimated CPU usage in %
+  # @return Number
+  def cpu
+    # TODO: all
+  end
+
+  # Class method
+  # return a hash of processes with all the instances running
+  def self.processes
+    @@processes
   end
  
   # @abstract Should be overwritten
@@ -132,7 +174,7 @@ class Runnable
     FileUtils.touch "#{@log_path}#{@command}_#{@pid}.log" # Create an empty file for logging
 
     @output_threads = []
-    outputs.each { |output_name, pipes|
+    outputs.each do |output_name, pipes|
       @output_threads << Thread.new do
         pipes[0].close
 
@@ -148,7 +190,7 @@ class Runnable
           end
         end
       end
-    }
+    end
   end
 
 
