@@ -23,6 +23,8 @@ class Runnable
   # Class variable to store all instances
   @@processes = Hash.new
 
+  # Constant to calculate cpu usage
+  HERTZ = 100
 
   # Constructor
   # @param [Hash] option_hash Options
@@ -112,7 +114,7 @@ class Runnable
       end
 
       # This instance is finished and we remove it
-      @@processes[@pid] = nil
+      @@processes.delete( @pid )
     end
   end
   
@@ -143,7 +145,29 @@ class Runnable
   # Calculate the estimated CPU usage in %
   # @return Number
   def cpu
-    # TODO: all
+    # Open the proc stat file
+    begin
+      stat = File.open( "/proc/#{@pid}/stat" ).read.split( " " )
+      
+      utime = stat[13].to_f
+      stime = stat[14].to_f
+      start_time = stat[21].to_f
+      
+      uptime = File.open( "/proc/uptime" ).read.split( " " )[0].to_i
+      
+      total_time = utime + stime # in jiffies
+
+      seconds = uptime - start_time / HERTZ
+      # Not so cool expresion
+      (( total_time.to_f * 1000 / HERTZ ) / seconds.to_f ) / 10
+      # Cool expression
+      #(total_time / seconds.to_f) * 100
+    #rescue Exception
+      # if we reach here there was an exception
+      # we return 0 either we rescue an ENOENT or ZeroDivisionError
+     # 0
+    end
+
   end
 
   # Class method

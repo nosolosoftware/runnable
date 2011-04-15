@@ -18,7 +18,6 @@ describe Runnable do
 
   describe "running system commands" do
     before( :each ) do
-      # Expresion regular para comprobar contra la salida de 'ps -A'
       # Regular expresion used to match the 'ps -A' output
       # $1 indicates the process PID
       # $2 indicates which terminal the process is running on (TTY)
@@ -280,4 +279,142 @@ describe Runnable do
     end
   end
 
+  describe "Controling process internal variables" do
+    it "Should return the correct pwd" do
+      @my_command = LS.new
+
+      @my_command.run
+
+      my_output= `pwd`.chomp
+      
+      @my_command.pwd.should be_eql( my_output )
+    end
+
+    it "should return the correct command owner" do
+      # Owner must be yourself
+      @my_command = LS.new
+
+      @my_command.run
+
+      `id`.split( " " )[0] =~ /uid=(\d+)/
+      
+      @my_command.owner.should be_eql( $1 )
+    end
+
+
+    it "Should return the correct group id" do
+      # Group must be YOUR group
+      @my_command = LS.new
+
+      @my_command.run
+
+      `id`.split( " " )[1] =~ /gid=(\d+)/
+
+       @my_command.group.should be_eql( $1 )
+    end
+
+    it "Should return the memory usage" do
+      # Check that match `ps --pid @pid u` with my_command.mem
+      @my_command = BC.new
+
+      @my_command.run
+
+      my_mem = `ps --pid #{@my_command.pid} u`.split( "\n" )[1].split( " " )[4].to_i
+      
+      @my_command.mem.should be_eql( my_mem )
+
+
+      @my_command.kill
+
+    end
+
+  end
+
+  describe "Control the class method processes" do
+
+    it "Should return the empty hash" do
+      # No instances running == empty hash
+
+      BC.processes.should be_empty
+    end
+
+    it "Should return the empty hash with no instances running" do
+      # Instance created but not running
+      @my_command = BC.new
+
+      BC.processes.should be_empty
+    end
+
+    it "Should return a no empty hash with one instance" do
+
+      @my_command = BC.new
+
+      @my_command.run
+
+      # the method should return a hash,
+      # with @pid as key and the instance as value
+      BC.processes[@my_command.pid].should be_equal( @my_command )
+
+      @my_command.kill
+    end
+
+    it "Should return a no empty hash with two instances" do
+
+      @my_command = BC.new
+
+      @my_second_instance = BC.new
+
+      @my_command.run
+
+      @my_second_instance.run
+      
+
+      BC.processes[@my_command.pid].should be_equal( @my_command )
+      
+      BC.processes[@my_second_instance.pid].should be_equal( @my_second_instance )
+
+      @my_command.kill
+      @my_second_instance.kill
+
+    end
+
+    it "Should not return a instance with an invalid pid" do
+
+      # Invalid pid!!! its random!!!
+      BC.processes[10121].should be_nil
+    end
+
+  end
+
+  describe "Calculate CPU usage" do
+    it "should return the current cpu usage 100%" do
+      @my_yes = Yes.new
+
+      @my_yes.run
+      # 100% cpu usage
+      my_cpu_usage = `ps --pid #{@my_yes.pid} u`.split( "\n" )[1].split( " " )[2].to_f
+
+      @my_yes.cpu.should ==( my_cpu_usage )
+      
+      @my_yes.kill
+      end
+
+    it "Should return the current cpu usage (random)" do
+      @my_vlc = VLC.new(:command_options => "examples_helpers/song.mp3")
+
+      @my_vlc.run
+      
+      sleep 5 
+
+
+
+      my_cpu_usage = `ps --pid #{@my_vlc.pid} u`.split( "\n" )[1].split( " " )[2].to_f
+
+      print "#{@my_vlc.cpu} === #{my_cpu_usage}\n"
+      @my_vlc.cpu.should ==( my_cpu_usage )
+
+      @my_vlc.kill
+    end
+
+  end
 end
