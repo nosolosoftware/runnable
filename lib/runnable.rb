@@ -147,25 +147,25 @@ class Runnable
   def cpu
     # Open the proc stat file
     begin
-      stat = File.open( "/proc/#{@pid}/stat" ).read.split( " " )
+      stat = File.open( "/proc/#{@pid}/stat" ).read.split
       
       utime = stat[13].to_f
       stime = stat[14].to_f
       start_time = stat[21].to_f
       
-      uptime = File.open( "/proc/uptime" ).read.split( " " )[0].to_i
+      uptime = File.open( "/proc/uptime" ).read.split[0].to_f
       
-      total_time = utime + stime # in jiffies
+      total_time = utime + stime # in jiffies 
 
-      seconds = uptime - start_time / HERTZ
+      seconds = uptime - ( start_time / HERTZ ) 
       # Not so cool expresion
-      (( total_time.to_f * 1000 / HERTZ ) / seconds.to_f ) / 10
+      #( ( total_time.to_f * 1000 / HERTZ ) / seconds.to_f ) / 10
       # Cool expression
-      #(total_time / seconds.to_f) * 100
-    #rescue Exception
+      (total_time / seconds.to_f)
+    rescue Exception
       # if we reach here there was an exception
       # we return 0 either we rescue an ENOENT or ZeroDivisionError
-     # 0
+      0
     end
 
   end

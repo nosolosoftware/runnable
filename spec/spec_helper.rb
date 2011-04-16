@@ -10,3 +10,5 @@ require 'bc'
 require 'yes'
 require 'sleep'
 require 'vlc'
+require 'cvlc'
+

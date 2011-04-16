@@ -388,30 +388,32 @@ describe Runnable do
 
   describe "Calculate CPU usage" do
     it "should return the current cpu usage 100%" do
-      @my_yes = Yes.new
+      @my_bc = BC.new( :command_options => "examples_helpers/bc_big_operation" )
 
-      @my_yes.run
-      # 100% cpu usage
-      my_cpu_usage = `ps --pid #{@my_yes.pid} u`.split( "\n" )[1].split( " " )[2].to_f
-
-      @my_yes.cpu.should ==( my_cpu_usage )
+      @my_bc.run
       
-      @my_yes.kill
+      sleep 5
+      # 100% cpu usage
+      my_cpu_usage = `ps --pid #{@my_bc.pid} u`.split( "\n" )[1].split( " " )[2].to_f
+
+      # We want a tolerance of 5%
+      @my_bc.cpu.should be_within( 5 ).of( my_cpu_usage )
+      @my_bc.kill
       end
 
     it "Should return the current cpu usage (random)" do
-      @my_vlc = VLC.new(:command_options => "examples_helpers/song.mp3")
+      # We are going to use command line vlc for this example
+      @my_vlc = CVLC.new(:command_options => "examples_helpers/song.mp3")
 
       @my_vlc.run
-      
-      sleep 5 
-
-
+      # Wait until all is loaded, to avoid different measures
+      sleep 2
 
       my_cpu_usage = `ps --pid #{@my_vlc.pid} u`.split( "\n" )[1].split( " " )[2].to_f
 
-      print "#{@my_vlc.cpu} === #{my_cpu_usage}\n"
-      @my_vlc.cpu.should ==( my_cpu_usage )
+      # We dont really need to be the same
+      # but we want to be close ( 5% tolerance )
+      @my_vlc.cpu.should be_within( 5 ).of( my_cpu_usage )
 
       @my_vlc.kill
     end
