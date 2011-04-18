@@ -419,4 +419,30 @@ describe Runnable do
     end
 
   end
+
+ describe "Check that execution group is correct" do
+    it "should be the same in the child as in the father" do
+      @my_bc = BC.new
+
+      @my_bc.run
+      
+      # Recover father's pid
+      file_status = File.open( "/proc/#{@my_bc.pid}/status" ).read.split( "\n" )
+      father_pid = file_status[4].split[1]
+      
+      # Recover father's gid
+      file_status = File.open( "/proc/#{father_pid}/status" ).read.split( "\n" )
+      father_gid = file_status[7].split[1]
+      father_uid = file_status[6].split[1]
+
+      # Check that father's group is the same as child
+      father_gid.should be_eql @my_bc.group
+
+      # And father's owner too
+      father_uid.should be_eql @my_bc.owner
+
+      @my_bc.kill
+    end
+  end  
+
 end
