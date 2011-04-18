@@ -79,10 +79,6 @@ class Runnable
     # Include instance in class variable
     @@processes[@pid] = self
 
-    # Satuts Variables
-    # PWD: Current Working Directory get by /proc/@pid/cwd
-    @pwd = File.readlink( "/proc/#{@pid}/cwd" )
-
     # Prepare the file to be read
     file_status = File.open( "/proc/#{@pid}/status" ).read.split( "\n" )
     # Owner: Read the owner of the process from /proc/@pid/status
@@ -116,6 +112,24 @@ class Runnable
       # This instance is finished and we remove it
       @@processes.delete( @pid )
     end
+    
+    # Satuts Variables
+    # PWD: Current Working Directory get by /proc/@pid/cwd
+    begin
+      @pwd = File.readlink( "/proc/#{@pid}/cwd" )
+    rescue
+      # If cwd is not available rerun @run_thread
+      if @run_thread.alive?
+        #If it is alive, we retry to get cwd
+        @run_thread.run
+        retry
+      else
+        #If process has terminated, we set pwd to current working directory of ruby
+        @pwd = Dir.getwd
+      end
+    end
+
+
   end
   
   # Stop the command 
@@ -123,6 +137,10 @@ class Runnable
   # @todo: @raise exeption
   def stop
     send_signal( :stop )
+
+    # In order to maintain consistency of @@processes
+    # we must assure that @run_thread finish correctly
+    @run_thread.run if @run_thread.alive?
   end
   
   # Kill the comand
@@ -130,10 +148,14 @@ class Runnable
   # @todo: @raise exeption
   def kill
     send_signal( :kill )
+
+    # In order to maintain consistency of @@processes
+    # we must assure that @run_thread finish correctly
+    join
   end
   
   def join
-    @run_thread.join
+    @run_thread.join if @run_thread.alive?
   end
 
   # Calculate the estimated memory usage in Kb
