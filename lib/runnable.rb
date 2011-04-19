@@ -19,6 +19,7 @@ class Runnable
   can_fire :fail, :finish
   
   attr_reader :pid, :owner, :group, :pwd
+  #attr_writer :input, :output
 
   # Class variable to store all instances
   @@processes = Hash.new
@@ -56,6 +57,12 @@ class Runnable
       @delete_log = option_hash[:delete_log]
     end
 
+    # Store input options
+    @input = Array.new
+
+    # Store outpur options
+    @output = Array.new
+
     # @todo: checks that command is in the PATH
     # ...
     
@@ -74,7 +81,7 @@ class Runnable
     out_rd, out_wr = IO.pipe
     err_rd, err_wr = IO.pipe
 
-    @pid = Process.spawn( "#{@command} #{@options}", { :out => out_wr, :err => err_wr } )
+    @pid = Process.spawn( "#{@command} #{@input.join( " " )} #{@options} #{@output.join( " " )}", { :out => out_wr, :err => err_wr } )
 
     # Include instance in class variable
     @@processes[@pid] = self
@@ -190,6 +197,16 @@ class Runnable
       0
     end
 
+  end
+
+  # Method to set the input file
+  def input ( param )
+    @input << param
+  end
+
+  # Method to set the output file
+  def output ( param )
+    @output << param
   end
 
   # Class method

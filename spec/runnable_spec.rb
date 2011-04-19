@@ -420,4 +420,35 @@ describe Runnable do
 
   end
 
+  describe "Input and Output Methods" do
+    it "should add a file as input" do
+      @my_bc = BC.new
+
+      @my_bc.input "./examples_helpers/bc_big_operation"
+
+      @my_bc.run
+
+      sleep 2
+      
+      # If all goes well bc should be calculating 2^10000000
+      @my_bc.cpu.should be_within( 5 ).of( 100 )
+
+      @my_bc.kill
+    end
+    it "should save the output to a file" do
+      @my_bc = BC.new
+
+      @my_bc.input "./examples_helpers/bc_small_operation"
+      @my_bc.output "> ./examples_helpers/bc_output"
+
+      @my_bc.run
+
+      @my_bc.join
+
+      my_output = File.open( "./examples_helpers/bc_output" ).read.chomp
+
+      my_output.should be_eql( "1024" )
+    end
+
+  end
 end
