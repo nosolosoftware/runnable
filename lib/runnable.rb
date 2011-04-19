@@ -249,5 +249,9 @@ class Runnable
     if @delete_log == true
       File.delete( "#{@log_path}#{@command}_#{@pid}.log" )
     end
-  end  
+  end
+
+  def parse_commands
+    
+  end
 end
