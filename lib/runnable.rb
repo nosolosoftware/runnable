@@ -13,13 +13,19 @@ require 'rubygems'
 require 'publisher'
 
 class Runnable
-
   extend Publisher
   
   can_fire :fail, :finish
-  
   attr_reader :pid, :owner, :group, :pwd
-  #attr_writer :input, :output
+  
+
+  def self.command_style( style )
+    define_method(:command_style) do 
+      require style.downcase
+
+      @command_style = Object.const_get(style.capitalize.to_sym).new
+    end
+  end
 
   # Class variable to store all instances
   @@processes = Hash.new
@@ -135,8 +141,6 @@ class Runnable
         @pwd = Dir.getwd
       end
     end
-
-
   end
   
   # Stop the command 
@@ -209,6 +213,11 @@ class Runnable
     @output << param
   end
 
+  # @overwritten
+  def self.method_missing( method, *params, &block )
+    @command_style.add_param( method.to_s, params != nil ? params.join(",") )
+  end
+
   # Class method
   # return a hash of processes with all the instances running
   def self.processes
@@ -268,7 +277,4 @@ class Runnable
     end
   end
 
-  def parse_commands
-    
-  end
 end

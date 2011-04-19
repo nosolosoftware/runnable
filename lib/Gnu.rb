@@ -1,4 +1,4 @@
-class GNU < Command_parser
+class Gnu < Command_parser
   
   def initialize
     super
