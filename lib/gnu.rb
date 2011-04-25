@@ -1,3 +1,5 @@
+require 'command_parser'
+
 class Gnu < Command_parser
   
   def initialize

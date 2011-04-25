@@ -1,2 +1,0 @@
-class Tail < Runnable
-end

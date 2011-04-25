@@ -1,2 +1,0 @@
-class DC < Runnable
-end

@@ -47,7 +47,7 @@ describe Runnable do
       File.open("/proc/#{@my_command.pid}/stat", "r") do | file |
         data = file.read.split( " " )
         data[0].to_i.should == @my_command.pid
-        data[1].should == "(#{@my_command.class.to_s.downcase})"          
+        data[1].should == "(#{@my_command.class.to_s.split( "::" ).last.downcase})"          
       end
       
     end
@@ -65,7 +65,7 @@ describe Runnable do
       $1.to_i.should == @my_command.pid
       
       # Check if the process name is the same of our command class
-      $4.should == @my_command.class.to_s.downcase      
+      $4.should == @my_command.class.to_s.split( "::" ).last.downcase      
     end
     
     # As we are using blocking commands, we need to terminate the execution
@@ -159,7 +159,7 @@ describe Runnable do
       # Recover the content of the log file      
       my_command_output = []
       
-      log = File.open("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log", "r") 
+      log = File.open("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log", "r") 
       log.each_line do |line|
         # Get the last part of each line in the log file
         my_command_output.push line.split(" ").last
@@ -185,7 +185,7 @@ describe Runnable do
       # Recover the content of the log file 
       my_command_output = []
 
-      log = File.open("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log", "r") 
+      log = File.open("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log", "r") 
       log.each_line do |line|
         # Get the non matched part of the line
         line =~ /\[.*\]\s(.+)/
@@ -216,11 +216,11 @@ describe Runnable do
       @my_command.run
 
       # Check that log file exist
-      File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_true
+      File.exist?("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_true
  
       @my_command.kill
       # Check if log file is deleted
-      File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_false
+      File.exist?("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_false
       
     end
 
@@ -230,11 +230,11 @@ describe Runnable do
       @my_command.run
       
       # Check that log file exist
-      File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_true
+      File.exist?("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_true
 
       @my_command.kill
       # Check that log file is removed
-      File.exist?("/var/log/runnable/#{@my_command.class.to_s.downcase}_#{@my_command.pid}.log").should be_true
+      File.exist?("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_true
       
     end
   end
@@ -450,5 +450,28 @@ describe Runnable do
       my_output.should be_eql( "1024" )
     end
 
+  end
+
+  describe "Command options as methods-like in the class" do
+    it "should parse the options passed as methods" do
+      @my_find = Commands::Find.new({:delete_log => false})
+
+      @my_find.depth
+      @my_find.iname '"*.rb"'
+      @my_find.type '"f"'      
+
+      @my_find.output "> command_output.log"
+
+      @my_find.run
+
+      @my_find.join
+
+      # Now we have a file with all rb files in current directory
+      # and in childs
+      output = File.open( "command_output.log").read.split( "\n" )
+
+      `find -depth -iname "*.rb" -type "f"`.split( "\n" ).should ==( output )
+
+    end
   end
 end

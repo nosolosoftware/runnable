@@ -6,7 +6,7 @@
 #   end
 #
 #   ls = LS.new
-#   ls.start
+#   ls.run
 #
 
 require 'rubygems'
@@ -21,10 +21,14 @@ class Runnable
 
   def self.command_style( style )
     define_method(:command_style) do 
-      require style.downcase
-
-      @command_style = Object.const_get(style.capitalize.to_sym).new
+#      require style.downcase
+#      @command_line_interface = Object.const_get(style.capitalize.to_sym).new
+      style
     end
+  end
+
+  def command_style
+    :gnu
   end
 
   # Class variable to store all instances
@@ -43,7 +47,7 @@ class Runnable
     #      :command_options
     #      :log_path
     
-    @command = self.class.to_s.downcase
+    @command = self.class.to_s.split( "::" ).last.downcase
     
     # Set the default command option
     # Empty by default
@@ -74,6 +78,16 @@ class Runnable
     
     @pid = nil
     @excep_array = []
+    
+
+    ###################################
+    # Metaprogramming part
+    ###################################
+    require command_style.to_s.downcase
+    
+    @command_line_interface = Object.const_get(command_style.to_s.capitalize.to_sym).new
+    ###################################
+    
     #End of initialize instance variables
     
     
@@ -87,7 +101,7 @@ class Runnable
     out_rd, out_wr = IO.pipe
     err_rd, err_wr = IO.pipe
 
-    @pid = Process.spawn( "#{@command} #{@input.join( " " )} #{@options} #{@output.join( " " )}", { :out => out_wr, :err => err_wr } )
+    @pid = Process.spawn( "#{@command} #{@input.join( " " )} #{@options} #{@command_line_interface.parse} #{@output.join( " " )}", { :out => out_wr, :err => err_wr } )
 
     # Include instance in class variable
     @@processes[@pid] = self
@@ -214,8 +228,8 @@ class Runnable
   end
 
   # @overwritten
-  def self.method_missing( method, *params, &block )
-    @command_style.add_param( method.to_s, params != nil ? params.join(",") )
+  def method_missing( method, *params, &block )
+    @command_line_interface.add_param( method.to_s, params != nil ? params.join(",") : nil )
   end
 
   # Class method

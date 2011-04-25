@@ -1,2 +1,0 @@
-class BC < Runnable
-end

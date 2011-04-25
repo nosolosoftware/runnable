@@ -1,7 +1,9 @@
+require 'command_parser'
+
 class Extended < Command_parser  
 
   def initialize
-    super()
+    super
   end
 
   # Parse all the params passed as arguments
