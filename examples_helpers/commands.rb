@@ -1,19 +1,27 @@
+# This module contains different classes that represents system commands
 module Commands
-  class Yes < Runnable
-
-    def initialize( opts = {} )
-      super( opts )
-    end
-
+  class DC < Runnable
   end
 
-  class VLC < Runnable
-    def initialize( opts )
-      super( opts )
-    end
+  class BC < Runnable
   end
 
   class Tail < Runnable
+  end
+
+  class Read < Runnable
+  end
+
+  class Yes < Runnable
+    def initialize( opts = {} )
+      super( opts )
+    end
+  end
+
+  class VLC < Runnable
+    def initialize( opts = {} )
+      super( opts )
+    end
   end
 
   class Sleep < Runnable
@@ -22,7 +30,10 @@ module Commands
     end
   end
 
-  class Read < Runnable
+  class Grep < Runnable
+    def initialize( opts = {} )
+      super( opts )
+    end
   end
 
   class LS < Runnable
@@ -37,21 +48,12 @@ module Commands
     end
   end
 
-  class Grep < Runnable
-    def initialize( opts = {} )
-      super( opts )
-    end
-  end
-
   class Find < Runnable
     command_style :extended
     
     def initialize( opts = {} )
       super( opts )
     end
-  end
-
-  class DC < Runnable
   end
 
   class CVLC < Runnable
@@ -61,7 +63,5 @@ module Commands
       super( opts )
     end
   end
-
-  class BC < Runnable
-  end
+  
 end

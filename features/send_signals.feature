@@ -14,4 +14,4 @@ Feature: send signals to a process
     When I send the "kill" signal
     Then the process should not exist
 
-    # @todo: hace falta la distinción entre SIGINT y SIGKILL
+    # @todo: create separate scenarios to SIGINT and SIGKILL

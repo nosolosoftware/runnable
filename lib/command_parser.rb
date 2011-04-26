@@ -1,3 +1,7 @@
+# Base class to create a command-line parameter parser
+# It holds that parameters in a hash and the child has
+# to be the one who return the formatted string according
+# to the stanard used.
 class Command_parser
   def initialize
     @params = {}
@@ -7,7 +11,8 @@ class Command_parser
     @params[param] = value
   end
 
-
+  # This method has to be overwritten in the child and
+  # return the formmated string
   # @abstract 
   def parse
   end

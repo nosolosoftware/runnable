@@ -21,8 +21,6 @@ class Runnable
 
   def self.command_style( style )
     define_method(:command_style) do 
-#      require style.downcase
-#      @command_line_interface = Object.const_get(style.capitalize.to_sym).new
       style
     end
   end
@@ -89,10 +87,8 @@ class Runnable
     ###################################
     
     #End of initialize instance variables
-    
-    
+   
     create_log_directory
-
   end
   
   # Start the command
@@ -121,21 +117,19 @@ class Runnable
     @run_thread = Thread.new do
       Process.wait( @pid, Process::WUNTRACED )
 
-      @output_threads.each{ |thread| thread.join }
+      @output_threads.each { |thread| thread.join }
       delete_log
 
       exit_status = $?.exitstatus
       
-      if exit_status != 0
-        @excep_array << SystemCallError.new( exit_status )
-      end
+      @excep_array << SystemCallError.new( exit_status ) if exit_status != 0
       
-      if @excep_array.empty? then
+      if @excep_array.empty?
         fire :finish
       else
         fire :fail, @excep_array
       end
-
+      
       # This instance is finished and we remove it
       @@processes.delete( @pid )
     end
@@ -278,17 +272,13 @@ class Runnable
       end
     end
   end
-
-
+  
   def create_log_directory
     Dir.mkdir(@log_path) unless Dir.exist?(@log_path)
   end
   
-  
   def delete_log
-    if @delete_log == true
-      File.delete( "#{@log_path}#{@command}_#{@pid}.log" )
-    end
+    File.delete( "#{@log_path}#{@command}_#{@pid}.log" ) if @delete_log == true
   end
 
 end

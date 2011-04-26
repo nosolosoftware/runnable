@@ -1,5 +1,6 @@
 require 'command_parser'
 
+# Parse the parameter hash using the GNU standard
 class Gnu < Command_parser
   
   def initialize
