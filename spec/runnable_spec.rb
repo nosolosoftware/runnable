@@ -106,23 +106,7 @@ describe Runnable do
       Dir.exist?("/proc/#{@my_command.pid}").should be_false
     end
   end
-  
-  describe "return termination codes" do
-    it "should return value 0 if termination was correct" do
-      pending
-    end
-    
-    it "should not return a value 0 if termination was incorrect due to invalid parameters" do
-      pending
-    end
-  end
-  
-  describe "return stop signal" do
-    it "should return stop signal when execution ends correctly after sometime" do
-      pending
-    end
-  end
-  
+ 
   describe "control the command execution" do
     it "should stop the execution of parent until the child has exit" do
      

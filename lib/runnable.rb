@@ -1,11 +1,13 @@
 # Convert a executable command in a Ruby-like class
-# you are able to start, send signals, stop the command
+# you are able to start, define params and send signals (like kill, or stop)
 #
 # @example usage:
 #   class LS < Runnable
+#     command_style :extended
 #   end
 #
 #   ls = LS.new
+#   ls.alh
 #   ls.run
 #
 
@@ -15,27 +17,34 @@ require 'publisher'
 class Runnable
   extend Publisher
   
+  # Fires to know whats happening inside
   can_fire :fail, :finish
+
+  # Basic Instance Variables
   attr_reader :pid, :owner, :group, :pwd
   
-
+  # Metaprogramming part of the class
+  # Template to set the command line parameters
   def self.command_style( style )
-    define_method(:command_style) do 
+    define_method( :command_style ) do
       style
     end
   end
-
+  
+  # In case the user didn't define a command_style
+  # we assume gnu style
   def command_style
     :gnu
   end
 
   # Class variable to store all instances
+  # order by pid
   @@processes = Hash.new
 
   # Constant to calculate cpu usage
   HERTZ = 100
 
-  # Constructor
+  # Initializer method
   # @param [Hash] option_hash Options
   # @option option_hash :delete_log (true) Delete the log after execution
   # @option option_hash :command_options ("") Command options
@@ -45,6 +54,8 @@ class Runnable
     #      :command_options
     #      :log_path
     
+    # If we have the command class in a namespace, we need to remove
+    # the namespace name
     @command = self.class.to_s.split( "::" ).last.downcase
     
     # Set the default command option
@@ -68,12 +79,13 @@ class Runnable
     # Store input options
     @input = Array.new
 
-    # Store outpur options
+    # Store output options
     @output = Array.new
 
     # @todo: checks that command is in the PATH
     # ...
     
+    # we dont set the pid, because we dont know until run
     @pid = nil
     @excep_array = []
     
@@ -81,9 +93,12 @@ class Runnable
     ###################################
     # Metaprogramming part
     ###################################
+    # Require the class to parse the command line options
     require command_style.to_s.downcase
-    
-    @command_line_interface = Object.const_get(command_style.to_s.capitalize.to_sym).new
+    # Create a new instance of the parser class
+    @command_line_interface = Object.const_get( command_style.to_s.capitalize.to_sym ).new
+    ###################################
+    # End Metaprogramming part
     ###################################
     
     #End of initialize instance variables
@@ -91,39 +106,53 @@ class Runnable
     create_log_directory
   end
   
-  # Start the command
+  # Start the execution of the command
   def run
+
+    # Create a new mutex
     @pid_mutex = Mutex.new
+
+    # Create pipes to redirect Standar I/O
     out_rd, out_wr = IO.pipe
+    # Redirect Error I/O
     err_rd, err_wr = IO.pipe
 
-    @pid = Process.spawn( "#{@command} #{@input.join( " " )} #{@options} #{@command_line_interface.parse} #{@output.join( " " )}", { :out => out_wr, :err => err_wr } )
+    # 
+    @pid = Process.spawn( "#{@command} #{@input.join( " " )} \
+                         #{@options} #{@command_line_interface.parse} \
+                         #{@output.join( " " )}", { :out => out_wr, :err => err_wr } )
 
     # Include instance in class variable
     @@processes[@pid] = self
 
-    # Prepare the file to be read
+    # Prepare the process info file to be read
     file_status = File.open( "/proc/#{@pid}/status" ).read.split( "\n" )
     # Owner: Read the owner of the process from /proc/@pid/status
     @owner = file_status[6].split( " " )[1]
     # Group: Read the Group owner from /proc/@pid/status
     @group = file_status[7].split( " " )[1]
    
-
+    # Set @output_thread with new threads
+    # wich execute the input/ouput loop
     create_logs(:out => [out_wr, out_rd], :err => [err_wr, err_rd])
     
-
-
+    # Create a new thread to avoid blocked processes
     @run_thread = Thread.new do
+      # Wait to get the pid process even if it has finished
       Process.wait( @pid, Process::WUNTRACED )
 
+      # Wait each I/O thread
       @output_threads.each { |thread| thread.join }
+      # Delete log if its necesary
       delete_log
 
+      # Get the exit code from command
       exit_status = $?.exitstatus
       
+      # In case of error add an Exception to the @excep_array
       @excep_array << SystemCallError.new( exit_status ) if exit_status != 0
       
+      # Fire signals according to the exit code
       if @excep_array.empty?
         fire :finish
       else
@@ -173,6 +202,7 @@ class Runnable
     join
   end
   
+  # Wait to @run_thread, wich is the command run thread
   def join
     @run_thread.join if @run_thread.alive?
   end
@@ -190,33 +220,37 @@ class Runnable
     begin
       stat = File.open( "/proc/#{@pid}/stat" ).read.split
       
+      # Get time variables
+      # utime = User Time
+      # stime = System Time
+      # start_time = Time passed from process starting
       utime = stat[13].to_f
       stime = stat[14].to_f
       start_time = stat[21].to_f
       
+      # uptime = Time passed from system starting
       uptime = File.open( "/proc/uptime" ).read.split[0].to_f
       
-      total_time = utime + stime # in jiffies 
+      # Total time that the process has been executed
+      total_time = utime + stime # in jiffies
 
+      # Seconds passed between start the process and now
       seconds = uptime - ( start_time / HERTZ ) 
-      # Not so cool expresion
-      #( ( total_time.to_f * 1000 / HERTZ ) / seconds.to_f ) / 10
-      # Cool expression
+      # Percentage of used CPU ( ESTIMATED )
       (total_time / seconds.to_f)
     rescue Exception
-      # if we reach here there was an exception
-      # we return 0 either we rescue an ENOENT or ZeroDivisionError
+      # we return 0 whatever Exception was raised
       0
     end
 
   end
 
-  # Method to set the input file
+  # Method to set the input files
   def input ( param )
     @input << param
   end
 
-  # Method to set the output file
+  # Method to set the output files
   def output ( param )
     @output << param
   end
@@ -244,18 +278,23 @@ class Runnable
       if params[0].class == Hash
         parse_hash( params[0] )
       else
-        @command_line_interface.add_param( method.to_s, params != nil ? params.join(",") : nil )
+        @command_line_interface.add_param( method.to_s,
+                                          params != nil ? params.join(",") : nil )
       end
     end
   end
 
   # Class method
   # return a hash of processes with all the instances running
+  # @return Hash:
+  # { pid1 => instance1,
+  #   pid2 => instance2
+  #   }
   def self.processes
     @@processes
   end
  
-  # @abstract Should be overwritten
+  # @abstract Should be overwritten in child clases
   def exceptions
     {}
   end
@@ -264,7 +303,8 @@ class Runnable
   
   # Send the desired signal to the command
   # @param [Symbol] signal must be a symbol
-  # @todo: @raise exeption
+  # @todo: @raise ESRCH if pid is not in system
+  # or EPERM if pid is not from user
   def send_signal( signal )
     if signal == :stop
       Process.kill( :SIGINT, @pid )
@@ -274,9 +314,11 @@ class Runnable
   end
   
   def create_logs(outputs = {})
-    FileUtils.touch "#{@log_path}#{@command}_#{@pid}.log" # Create an empty file for logging
+    # Create an empty file for logging
+    FileUtils.touch "#{@log_path}#{@command}_#{@pid}.log"
 
     @output_threads = []
+    
     outputs.each do |output_name, pipes|
       @output_threads << Thread.new do
         pipes[0].close
@@ -285,7 +327,7 @@ class Runnable
           File.open("#{@log_path}#{@command}_#{@pid}.log", "a") do |log_file|
             log_file.puts( "[#{Time.new.inspect} || [STD#{output_name.to_s.upcase} || [#{@pid}]] #{line}" )
           end
-
+          # Match custom exceptions
           exceptions.each do | reg_expr, value |
             if reg_expr =~ line then
               @excep_array << value.new( $1 )
@@ -307,7 +349,8 @@ class Runnable
   def parse_hash( hash )
     hash.each do |key, value|
       # Call to a undefined method which trigger overwritten method_missing
-      self.public_send( key.to_sym, value )
+      # unless its named run, stop, kill
+      self.public_send( key.to_sym, value ) unless self.respond_to?( key.to_sym )
     end
   end
 end
