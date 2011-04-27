@@ -473,5 +473,32 @@ describe Runnable do
       `find -depth -iname "*.rb" -type "f"`.split( "\n" ).should ==( output )
 
     end
+
+    it "should not parse methods whit two or more parameters" do
+      @my_find = Commands::Find.new
+      lambda{
+        @my_find.options( "option1", "option2" )
+        }.should raise_error( NoMethodError )
+      @my_find.run
+    end
+
+    it "should parse an undefined method with a hash as argument" do
+      @my_find = Commands::Find.new
+      lambda { 
+        @my_find.options( { :depth => nil, :iname => '"*.rb"', :type => '"f"' } )
+        }.should_not raise_error ( Exception )
+
+      @my_find.output "> command_output.log"
+      @my_find.run
+
+      @my_find.join
+
+      # Now we have a file with all rb files in current directory
+      # and in childs
+      output = File.open( "command_output.log").read.split( "\n" )
+
+      `find -depth -iname "*.rb" -type "f"`.split( "\n" ).should ==( output )
+
+    end
   end
 end

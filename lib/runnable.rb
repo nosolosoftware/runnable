@@ -221,9 +221,32 @@ class Runnable
     @output << param
   end
 
+  # This function convert undefined methods (ruby-like syntax) into parameters
+  # to be parse at the execution time.
+  #
+  # This only convert methods with zero or one parameters. A hash can be passed
+  # and each key will define a new method and method name will be ignored.
+  #
+  # find.depth                                         #=> find -depth
+  # find.iname( '"*.rb"')                              #=> find -iname "*.rb"
+  # find.foo( { :iname => '"*.rb"', :type => '"f"' } ) #=> find -iname "*.rb" - type "f"
+  #
+  # Invalid method
+  # sleep.5 #=> Incorrect
+  # "5" is not a valid call to a ruby method so method_missing will not be invoked and will
+  # raise a tINTEGER exception
+  #
   # @overwritten
   def method_missing( method, *params, &block )
-    @command_line_interface.add_param( method.to_s, params != nil ? params.join(",") : nil )
+    if params.length > 1
+      super
+    else
+      if params[0].class == Hash
+        parse_hash( params[0] )
+      else
+        @command_line_interface.add_param( method.to_s, params != nil ? params.join(",") : nil )
+      end
+    end
   end
 
   # Class method
@@ -281,4 +304,10 @@ class Runnable
     File.delete( "#{@log_path}#{@command}_#{@pid}.log" ) if @delete_log == true
   end
 
+  def parse_hash( hash )
+    hash.each do |key, value|
+      # Call to a undefined method which trigger overwritten method_missing
+      self.public_send( key.to_sym, value )
+    end
+  end
 end
