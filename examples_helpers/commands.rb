@@ -63,5 +63,13 @@ module Commands
       super( opts )
     end
   end
-  
+ 
+  class GCC < Runnable
+    command_style :gnu
+
+    def initialize( opts = {} )
+      super( opts )
+    end
+  end
+
 end

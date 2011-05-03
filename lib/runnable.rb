@@ -49,7 +49,7 @@ class Runnable
   # @option option_hash :delete_log (true) Delete the log after execution
   # @option option_hash :command_options ("") Command options
   # @option option_hash :log_path ("/var/log/runnable") Path for the log files
-  def initialize( option_hash= {} )
+  def initialize( option_hash = {} )
     # keys :delete_log
     #      :command_options
     #      :log_path
@@ -108,7 +108,6 @@ class Runnable
   
   # Start the execution of the command
   def run
-
     # Create a new mutex
     @pid_mutex = Mutex.new
 
@@ -273,7 +272,7 @@ class Runnable
   # @overwritten
   def method_missing( method, *params, &block )
     if params.length > 1
-      super
+      super( method, params, block )
     else
       if params[0].class == Hash
         parse_hash( params[0] )
@@ -287,7 +286,8 @@ class Runnable
   # Class method
   # return a hash of processes with all the instances running
   # @return Hash:
-  # { pid1 => instance1,
+  #   { 
+  #   pid1 => instance1,
   #   pid2 => instance2
   #   }
   def self.processes
@@ -313,7 +313,7 @@ class Runnable
     end
   end
   
-  def create_logs(outputs = {})
+  def create_logs( outputs = {} )
     # Create an empty file for logging
     FileUtils.touch "#{@log_path}#{@command}_#{@pid}.log"
 
@@ -339,7 +339,7 @@ class Runnable
   end
   
   def create_log_directory
-    Dir.mkdir(@log_path) unless Dir.exist?(@log_path)
+    Dir.mkdir( @log_path ) unless Dir.exist?( @log_path )
   end
   
   def delete_log

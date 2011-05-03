@@ -484,5 +484,18 @@ describe Runnable do
       `find -depth -iname "*.rb" -type "f"`.split( "\n" ).should ==( output )
 
     end
+
+    it "should parse gnu params if no command style is set" do
+      @my_gcc = Commands::GCC.new( :delete_log => false )
+      @my_gcc.input 'examples_helpers/program.c'
+      @my_gcc.o "examples_helpers/gcc_output"
+      @my_gcc.run
+
+      @my_gcc.join
+
+      File.exists?( "examples_helpers/gcc_output" ).should be_true
+
+      File.delete( "examples_helpers/gcc_output" )
+    end
   end
 end
