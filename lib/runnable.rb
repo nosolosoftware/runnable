@@ -10,8 +10,8 @@
 #   ls.alh
 #   ls.run
 #
+$LOAD_PATH << File.expand_path( './runnable', __FILE__ )
 
-require 'rubygems'
 require 'publisher'
 
 class Runnable
@@ -90,24 +90,23 @@ class Runnable
     @excep_array = []
     
 
-    ###################################
     # Metaprogramming part
-    ###################################
     # Require the class to parse the command line options
     require command_style.to_s.downcase
     # Create a new instance of the parser class
     @command_line_interface = Object.const_get( command_style.to_s.capitalize.to_sym ).new
-    ###################################
     # End Metaprogramming part
-    ###################################
-    
+   
     #End of initialize instance variables
    
     create_log_directory
   end
   
   # Start the execution of the command
-  def run
+  # @return [nil]
+	# @fire :finish
+	# @fire :fail
+	def run
     # Create a new mutex
     @pid_mutex = Mutex.new
 
@@ -164,7 +163,10 @@ class Runnable
     
     # Satuts Variables
     # PWD: Current Working Directory get by /proc/@pid/cwd
-    begin
+		# @rescue If a fast process is runned there isn't time to get
+		# the correct PWD. If the readlink fails, we retry, if the process still alive
+		# until the process finish.
+		begin
       @pwd = File.readlink( "/proc/#{@pid}/cwd" )
     rescue
       # If cwd is not available rerun @run_thread
@@ -180,7 +182,7 @@ class Runnable
   end
   
   # Stop the command 
-  # @return nil
+  # @return [nil]
   # @todo: @raise exeption
   def stop
     send_signal( :stop )
@@ -191,7 +193,7 @@ class Runnable
   end
   
   # Kill the comand
-  # @return nil
+  # @return [nil]
   # @todo: @raise exeption
   def kill
     send_signal( :kill )
@@ -201,19 +203,20 @@ class Runnable
     join
   end
   
-  # Wait to @run_thread, wich is the command run thread
+  # Wait to @run_thread, wich is the command main thread
+	# @return [nil]
   def join
     @run_thread.join if @run_thread.alive?
   end
 
   # Calculate the estimated memory usage in Kb
-  # @return Number
+  # @return [Number] Estimated mem usage in Kb
   def mem
     File.open( "/proc/#{@pid}/status" ).read.split( "\n" )[11].split( " " )[1].to_i
   end
 
   # Calculate the estimated CPU usage in %
-  # @return Number
+  # @return [Number] The estimated cpu usage
   def cpu
     # Open the proc stat file
     begin
@@ -237,20 +240,27 @@ class Runnable
       seconds = uptime - ( start_time / HERTZ ) 
       # Percentage of used CPU ( ESTIMATED )
       (total_time / seconds.to_f)
-    rescue Exception
-      # we return 0 whatever Exception was raised
+    rescue IOError
+			# Fails to open file
       0
+		rescue ZeroDivisionError
+			# Seconds is Zero!
+			0
     end
 
   end
 
   # Method to set the input files
-  def input ( param )
+	# @param [String] param Input to be parsed as command options (must be a string)
+	# @return [nil]
+  def input( param )
     @input << param
   end
 
   # Method to set the output files
-  def output ( param )
+	# @param [String] param Output to be parsed as command options (must be a string)
+	# @return [nil]
+  def output( param )
     @output << param
   end
 
@@ -268,14 +278,21 @@ class Runnable
   # sleep.5 #=> Incorrect
   # "5" is not a valid call to a ruby method so method_missing will not be invoked and will
   # raise a tINTEGER exception
-  #
+  # 
+	# @param [Symbol] method Method called that is missing
+	# @param [Array] params Params in the call
+	# @param [Block] block Block code in method
+	# @return [nil]
   # @overwritten
   def method_missing( method, *params, &block )
     if params.length > 1
       super( method, params, block )
     else
       if params[0].class == Hash
-        parse_hash( params[0] )
+        # If only one param is passed and its a Hash
+				# we need to expand the hash and call each key as a method with value as params
+				# @see parse_hash for more information
+				parse_hash( params[0] )
       else
         @command_line_interface.add_param( method.to_s,
                                           params != nil ? params.join(",") : nil )
@@ -285,17 +302,20 @@ class Runnable
 
   # Class method
   # return a hash of processes with all the instances running
-  # @return Hash:
-  #   { 
-  #   pid1 => instance1,
-  #   pid2 => instance2
-  #   }
+  # @return [Hash] Pid_and_instances options
+	#
+	# @options Pid_and_instances pid [Symbol] Process pid
+	# @options Pid_and_instances instance [Runnable] Process instance
+	# 
   def self.processes
     @@processes
   end
  
   # @abstract Should be overwritten in child clases
-  def exceptions
+	# @return [Hash] Custom_exceptions options
+	# @options Custom_exceptions regexp [Regexp] Regexp to match with output error
+	# @options Custom_exceptions exception [Exception] Exception to be raised if a positive match happen
+	def exceptions
     {}
   end
   
@@ -313,12 +333,19 @@ class Runnable
     end
   end
   
+	# Redirect command I/O to log files
+	# these files are located in /var/log/runnable
+	# @param [Hash] outputs options
+	# @options outputs stream [Symbol] stream name
+	# @options outputs pipes [IO] I/O stream to be redirected
+	# @return [nil]
   def create_logs( outputs = {} )
     # Create an empty file for logging
     FileUtils.touch "#{@log_path}#{@command}_#{@pid}.log"
 
     @output_threads = []
-    
+    # for each io stream we create a thread wich read that 
+		# stream and write it in a log file
     outputs.each do |output_name, pipes|
       @output_threads << Thread.new do
         pipes[0].close
@@ -328,10 +355,10 @@ class Runnable
             log_file.puts( "[#{Time.new.inspect} || [STD#{output_name.to_s.upcase} || [#{@pid}]] #{line}" )
           end
           # Match custom exceptions
+					# if we get a positive match, add it to the exception array
+					# in order to inform the user of what had happen
           exceptions.each do | reg_expr, value |
-            if reg_expr =~ line then
-              @excep_array << value.new( $1 )
-            end
+  					@excep_array<< value.new( $1 ) if reg_expr =~ line
           end
         end
       end
@@ -346,10 +373,12 @@ class Runnable
     File.delete( "#{@log_path}#{@command}_#{@pid}.log" ) if @delete_log == true
   end
 
+  # Expand a parameter hash calling each key as method and value as param
+	# forcing method misssing to be called
   def parse_hash( hash )
     hash.each do |key, value|
       # Call to a undefined method which trigger overwritten method_missing
-      # unless its named run, stop, kill
+      # unless its named as a runnable method
       self.public_send( key.to_sym, value ) unless self.respond_to?( key.to_sym )
     end
   end
