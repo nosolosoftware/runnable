@@ -3,8 +3,8 @@ require 'command_parser'
 # Parse the parameter hash using the extended standard
 class Extended < Command_parser  
 
-  # Parse all the params passed as arguments
-  # @return String
+  # Convert a hash in a Extended style string options
+  # @return [String] Extended style raw character array
   def parse
     options = ""
     @params.each do | param , value |
