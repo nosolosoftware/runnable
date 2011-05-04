@@ -10,6 +10,7 @@
 #   ls.alh
 #   ls.run
 #
+$LOAD_PATH << File.expand_path( './runnable', __FILE__ )
 
 require 'publisher'
 
