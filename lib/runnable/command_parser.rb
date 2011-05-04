@@ -7,6 +7,10 @@ class Command_parser
     @params = {}
   end
 
+  # Add params and value to the params hash to be parsed
+  # @param [String] param Parameter name
+  # @param [Object] value Parameter value, nil if not set
+  # @return [nil]
   def add_param( param, value = nil )
     @params[param] = value
   end
