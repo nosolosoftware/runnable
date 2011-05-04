@@ -438,13 +438,13 @@ describe Runnable do
 
   describe "Command options as methods-like in the class" do
     it "should parse the options passed as methods" do
-      @my_find = Commands::Find.new({:delete_log => false})
+      @my_find = Commands::Find.new( { :delete_log => false } )
 
       @my_find.depth
       @my_find.iname '"*.rb"'
       @my_find.type '"f"'      
 
-      @my_find.output "> command_output.log"
+      @my_find.output '> ./examples_helpers/command_output.log'
 
       @my_find.run
 
@@ -452,10 +452,10 @@ describe Runnable do
 
       # Now we have a file with all rb files in current directory
       # and in childs
-      output = File.open( "command_output.log").read.split( "\n" )
+      output = File.open( "./examples_helpers/command_output.log" ).read.split( "\n" )
 
       `find -depth -iname "*.rb" -type "f"`.split( "\n" ).should ==( output )
-
+      File.delete( "./examples_helpers/command_output.log" )    
     end
 
     it "should not parse methods whit two or more parameters" do
@@ -472,17 +472,18 @@ describe Runnable do
         @my_find.options( { :depth => nil, :iname => '"*.rb"', :type => '"f"' } )
         }.should_not raise_error ( Exception )
 
-      @my_find.output "> command_output.log"
+      @my_find.output '> examples_helpers/command_output.log'
       @my_find.run
 
       @my_find.join
 
       # Now we have a file with all rb files in current directory
       # and in childs
-      output = File.open( "command_output.log").read.split( "\n" )
+      output = File.open( "examples_helpers/command_output.log" ).read.split( "\n" )
 
-      `find -depth -iname "*.rb" -type "f"`.split( "\n" ).should ==( output )
-
+      `find -depth -iname "*.rb" -type "f"`.split( "\n" ).should ==  output
+      
+      File.delete( "examples_helpers/command_output.log" )
     end
 
     it "should parse gnu params if no command style is set" do
