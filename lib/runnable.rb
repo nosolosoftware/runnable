@@ -19,7 +19,7 @@
 # Convert a executable command in a Ruby-like class
 # you are able to start, define params and send signals (like kill, or stop)
 #
-# @example usage:
+# @example Usage:
 #   class LS < Runnable
 #     command_style :extended
 #   end
@@ -38,35 +38,42 @@ class Runnable
   # Fires to know whats happening inside
   can_fire :fail, :finish
 
-  # Basic Instance Variables
-  attr_reader :pid, :owner, :group, :pwd
+  # Process id.
+  attr_reader :pid
+  # Process owner.
+  attr_reader :owner
+  # Process group.
+  attr_reader :group
+  # Directory where process was called from.
+  attr_reader :pwd
   
   # Metaprogramming part of the class
-  # Template to set the command line parameters
+  
+  # Define the parameter style to be used.
+  # @return [nil]
   def self.command_style( style )
     define_method( :command_style ) do
       style
     end
   end
   
-  # In case the user didn't define a command_style
-  # we assume gnu style
+  # Parameter style used for the command.
+  # @return [Symbol] Command style.
   def command_style
     :gnu
   end
 
-  # Class variable to store all instances
-  # order by pid
+  # List of runnable instances running on the system order by pid.
   @@processes = Hash.new
 
-  # Constant to calculate cpu usage
+  # Constant to calculate cpu usage.
   HERTZ = 100
 
-  # Initializer method
-  # @param [Hash] option_hash Options
-  # @option option_hash :delete_log (true) Delete the log after execution
-  # @option option_hash :command_options ("") Command options
-  # @option option_hash :log_path ("/var/log/runnable") Path for the log files
+  # Create a new instance of a runnable command.
+  # @param [Hash] option_hash Options.
+  # @option option_hash :delete_log (true) Delete the log after execution.
+  # @option option_hash :command_options ("") Command options.
+  # @option option_hash :log_path ("/var/log/runnable") Path for the log files.
   def initialize( option_hash = {} )
     # keys :delete_log
     #      :command_options
@@ -120,7 +127,7 @@ class Runnable
     create_log_directory
   end
   
-  # Start the execution of the command
+  # Start the execution of the command.
   # @return [nil]
   # @fire :finish
   # @fire :fail
@@ -199,9 +206,9 @@ class Runnable
     end
   end
   
-  # Stop the command 
+  # Stop the command.
   # @return [nil]
-  # @todo: @raise exeption
+  # @todo Raise an exception if process is not running.
   def stop
     send_signal( :stop )
 
@@ -210,9 +217,9 @@ class Runnable
     @run_thread.run if @run_thread.alive?
   end
   
-  # Kill the comand
+  # Kill the comand.
   # @return [nil]
-  # @todo: @raise exeption
+  # @todo Raise an exeption if process is not running.
   def kill
     send_signal( :kill )
 
@@ -221,20 +228,20 @@ class Runnable
     join
   end
   
-  # Wait to @run_thread, wich is the command main thread
+  # Wait for command thread to finish it execution.
   # @return [nil]
   def join
     @run_thread.join if @run_thread.alive?
   end
 
-  # Calculate the estimated memory usage in Kb
-  # @return [Number] Estimated mem usage in Kb
+  # Calculate the estimated memory usage in Kb.
+  # @return [Number] Estimated mem usage in Kb.
   def mem
     File.open( "/proc/#{@pid}/status" ).read.split( "\n" )[11].split( " " )[1].to_i
   end
 
-  # Calculate the estimated CPU usage in %
-  # @return [Number] The estimated cpu usage
+  # Estimated CPU usage in %.
+  # @return [Number] The estimated cpu usage.
   def cpu
     # Open the proc stat file
     begin
@@ -268,40 +275,38 @@ class Runnable
 
   end
 
-  # Method to set the input files
-  # @param [String] param Input to be parsed as command options (must be a string)
+  # Set the input files.
+  # @param [String] param Input to be parsed as command options.
   # @return [nil]
   def input( param )
     @input << param
   end
 
-  # Method to set the output files
-  # @param [String] param Output to be parsed as command options (must be a string)
+  # Set the output files.
+  # @param [String] param Output to be parsed as command options.
   # @return [nil]
   def output( param )
     @output << param
   end
 
-  # This function convert undefined methods (ruby-like syntax) into parameters
-  # to be parse at the execution time.
-  #
+  # Convert undefined methods (ruby-like syntax) into parameters
+  # to be parsed at the execution time.
   # This only convert methods with zero or one parameters. A hash can be passed
   # and each key will define a new method and method name will be ignored.
-  #
-  # find.depth                                         #=> find -depth
-  # find.iname( '"*.rb"')                              #=> find -iname "*.rb"
-  # find.foo( { :iname => '"*.rb"', :type => '"f"' } ) #=> find -iname "*.rb" - type "f"
-  #
-  # Invalid method
-  # sleep.5 #=> Incorrect
-  # "5" is not a valid call to a ruby method so method_missing will not be invoked and will
-  # raise a tINTEGER exception
+  # 
+  # @example Valid calls:
+  #   find.depth                                         #=> find -depth
+  #   find.iname( '"*.rb"')                              #=> find -iname "*.rb"
+  #   find.foo( { :iname => '"*.rb"', :type => '"f"' } ) #=> find -iname "*.rb" - type "f"
+  # @example Invalid calls:
+  #   sleep.5 #=> Incorrect. "5" is not a valid call to a ruby method so method_missing will not be invoked and will
+  #   raise a tINTEGER exception
   # 
   # @param [Symbol] method Method called that is missing
   # @param [Array] params Params in the call
   # @param [Block] block Block code in method
   # @return [nil]
-  # @overwritten
+  # @override
   def method_missing( method, *params, &block )
     if params.length > 1
       super( method, params, block )
@@ -318,31 +323,36 @@ class Runnable
     end
   end
 
-  # Class method
-  # return a hash of processes with all the instances running
-  # @return [Hash] Pid_and_instances options
-  #
-  # @options Pid_and_instances pid [Symbol] Process pid
-  # @options Pid_and_instances instance [Runnable] Process instance
-  # 
+  # List of runnable instances running on the system.
+  # @return [Hash] Using process pids as keys and instances as values.
   def self.processes
     @@processes
   end
  
-  # @abstract Should be overwritten in child clases
-  # @return [Hash] Custom_exceptions options
-  # @options Custom_exceptions regexp [Regexp] Regexp to match with output error
-  # @options Custom_exceptions exception [Exception] Exception to be raised if a positive match happen
+  # @abstract 
+  # Returns a hash of regular expressions and exceptions associated to them.
+  # Command output is match against those regular expressions, if it does match
+  # an appropiate exception is included in the return value of execution. 
+  # @note This method should be overwritten in child classes.
+  # @example Usage:
+  #   class ls < Runnable
+  #     def exceptions
+  #       { /ls: (invalid option.*)/ => ArgumentError }
+  #     end
+  #   end
+  #
+  # @return [Hash] Using regular expressions as keys and exceptions that should
+  #   be raised as values.
 	def exceptions
     {}
   end
   
   protected
   
-  # Send the desired signal to the command
-  # @param [Symbol] signal must be a symbol
-  # @todo: @raise ESRCH if pid is not in system
-  # or EPERM if pid is not from user
+  # Send the desired signal to the command.
+  # @param [Symbol] Signal to be send to the command.
+  # @todo raise ESRCH if pid is not in system
+  #   or EPERM if pid is not from user.
   def send_signal( signal )
     if signal == :stop
       Process.kill( :SIGINT, @pid )
@@ -351,11 +361,11 @@ class Runnable
     end
   end
   
-  # Redirect command I/O to log files
-  # these files are located in /var/log/runnable
-  # @param [Hash] outputs options
-  # @options outputs stream [Symbol] stream name
-  # @options outputs pipes [IO] I/O stream to be redirected
+  # Redirect command I/O to log files.
+  # These files are located in /var/log/runnable.
+  # @param [Hash] Outputs options.
+  # @option outputs stream [Symbol] Stream name.
+  # @option outputs pipes [IO] I/O stream to be redirected.
   # @return [nil]
   def create_logs( outputs = {} )
     # Create an empty file for logging
@@ -392,7 +402,9 @@ class Runnable
   end
 
   # Expand a parameter hash calling each key as method and value as param
-  # forcing method misssing to be called
+  # forcing method misssing to be called.
+  # @param [Hash] hash Parameters to be expand and included in command execution
+  # @return [nil]
   def parse_hash( hash )
     hash.each do |key, value|
       # Call to a undefined method which trigger overwritten method_missing

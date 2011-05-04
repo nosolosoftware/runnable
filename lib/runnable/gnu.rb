@@ -17,13 +17,13 @@
 
 require 'command_parser'
 
-# Parse the parameter hash using the GNU standard
+# <p>Parse the parameter hash using the GNU standard.</p>
 class Gnu < Command_parser
 
-  # This method convert a hash {parameter => value} in a string ready to
+  # This method convert a hash in a string ready to
   # be passed to a command that uses GNU style to parse command line
-  # parameters
-  # @return [String] Gnu-style parsed params in a raw character array
+  # parameters.
+  # @return [String] Gnu-style parsed params in a raw character array.
   def parse
     result = ""
 

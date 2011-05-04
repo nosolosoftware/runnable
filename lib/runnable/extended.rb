@@ -17,11 +17,11 @@
 
 require 'command_parser'
 
-# Parse the parameter hash using the extended standard
+# <p>Parse the parameter hash using the extended standard.</p>
 class Extended < Command_parser  
 
-  # Convert a hash in a Extended style string options
-  # @return [String] Extended style raw character array
+  # Convert a hash in a Extended style string options.
+  # @return [String] Extended-style parsed params in a raw character array.
   def parse
     options = ""
     @params.each do | param , value |
