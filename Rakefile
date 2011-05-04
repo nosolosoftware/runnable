@@ -31,7 +31,6 @@ require 'jeweler'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more     options
   gem.name = 'runnable'
-  gem.version = '0.1.0'
   gem.homepage = 'http://github.com/nosolosoftware/runnable'
   gem.license = 'GPL-3'
   gem.summary = %Q{A Ruby gem for execute and control system commands}
@@ -39,5 +38,8 @@ Jeweler::Tasks.new do |gem|
   gem.email = ['rgarcia@nosolosoftware.biz', 'lciudad@nosolosoftware.biz', 'jaranda@nosolosoftware.biz']
   gem.authors = ['Rafael García', 'Luis Ciudad', 'Javier Aranda']
   # dependencies defined in Gemfile
+  ['Gemfile', 'Rakefile', 'examples_helpers', 'features', 'spec'].each do |d|
+    gem.files.exclude d
+  end
 end
 Jeweler::RubygemsDotOrgTasks.new
