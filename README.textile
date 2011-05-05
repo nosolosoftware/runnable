@@ -72,7 +72,7 @@ exception added to exception array. This means that if the command output match
 the regular expression, a new exception will be include in @:fail@ event parameter.
 
 .h1 About
-Runnable is a gem develop by NoSoloSoftware.
+Runnable is a gem develop by "NoSoloSoftware":http://nosolosoftware.biz
 
 h1. License
 Runnable is Copyright 2011 NoSoloSoftware, it is free software.
