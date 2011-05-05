@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://github.com/nosolosoftware/runnable}
   s.licenses = ["GPL-3"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.6.2}
+  s.rubygems_version = %q{1.7.2}
   s.summary = %q{A Ruby gem for execute and control system commands}
 
   if s.respond_to? :specification_version then
