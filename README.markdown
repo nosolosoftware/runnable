@@ -39,20 +39,16 @@ This is an example of how can we receive the return value of a command:
 ```ruby
 class LS < Runnable
 end
-
 my_command = LS.new
-
 my_command.when :finish do
   puts "Everything went better than expected :)"
 end
-
 my_command.when :fail do |exceptions|
   puts "Something went wrong"
   exceptions.each do |exception|
     puts exception.message
   end
 end
-
 my_command.run
 ```
 
