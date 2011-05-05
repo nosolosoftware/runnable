@@ -4,16 +4,24 @@ A Ruby gem that allow programmer to control UNIX system commands as a Ruby class
 # Usage
 All you have to do is to create a class named exactly as command and make it inherit from class Runnable.
 
-    class LS < Runnable
-    end
+```ruby    
+class LS < Runnable
+end
+```
 
 That gives you the basics to control the execution of `ls` command.
 
 Now you can create an instance like this:
-    my_command = LS.new
+
+```ruby
+my_command = LS.new
+```
 
 And run the command as follows
-    my_command.run
+
+```ruby
+my_command.run
+```
 
 Many other options are available; you can stop the command, kill it or look 
 for some important information about the command and its process. Entire 
@@ -30,19 +38,24 @@ value as the parameter of a SystemCallError exception and optionally others
 exceptions ocurred at runtime.
 
 This is an example of how can we receive the return value of a command:
+
 ```ruby
 class LS < Runnable
 end
+
 my_command = LS.new
+
 my_command.when :finish do
   puts "Everything went better than expected :)"
 end
+
 my_command.when :fail do |exceptions|
   puts "Something went wrong"
   exceptions.each do |exception|
     puts exception.message
   end
 end
+
 my_command.run
 ```
 
