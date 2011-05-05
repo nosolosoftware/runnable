@@ -4,22 +4,16 @@ A Ruby gem that allow programmer to control UNIX system commands as a Ruby class
 # Usage
 All you have to do is to create a class named exactly as command and make it inherit from class Runnable.
 
-```ruby
-class LS < Runnable
-end
-```
+    class LS < Runnable
+    end
 
 That gives you the basics to control the execution of `ls` command.
 
 Now you can create an instance like this:
-```ruby
-my_command = LS.new
-```
+    my_command = LS.new
 
 And run the command as follows
-```ruby
-my_command.run
-```
+    my_command.run
 
 Many other options are available; you can stop the command, kill it or look 
 for some important information about the command and its process. Entire 
