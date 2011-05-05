@@ -35,9 +35,11 @@ Jeweler::Tasks.new do |gem|
   gem.license = 'GPL-3'
   gem.summary = %Q{A Ruby gem for execute and control system commands}
   gem.description = %Q{Convert a executable command in a Ruby-like class you are able to start, define params and send signals (like kill, or stop)}
-  gem.email = ['rgarcia@nosolosoftware.biz', 'lciudad@nosolosoftware.biz', 'jaranda@nosolosoftware.biz']
-  gem.authors = ['Rafael García', 'Luis Ciudad', 'Javier Aranda']
+  gem.email = ['rgarcia@nosolosoftware.biz', 'lciudad@nosolosoftware.biz', 'pnavajas@nosolosoftware.biz', 'jaranda@nosolosoftware.biz']
+  gem.authors = ['Rafael García', 'Luis Ciudad', 'Pedro Navajas', 'Javier Aranda']
   # dependencies defined in Gemfile
+
+  # Files not included
   ['Gemfile', 'Rakefile', 'examples_helpers', 'features', 'spec'].each do |d|
     gem.files.exclude d
   end
