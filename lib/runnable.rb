@@ -28,7 +28,9 @@
 #   ls.alh
 #   ls.run
 #
-$LOAD_PATH << File.expand_path( './runnable', __FILE__ )
+# $LOAD_PATH << File.expand_path( './runnable', __FILE__ )
+require 'runnable/gnu'
+require 'runnable/extended'
 
 require 'publisher'
 
@@ -117,7 +119,7 @@ class Runnable
 
     # Metaprogramming part
     # Require the class to parse the command line options
-    require command_style.to_s.downcase
+    # require command_style.to_s.downcase
     # Create a new instance of the parser class
     @command_line_interface = Object.const_get( command_style.to_s.capitalize.to_sym ).new
     # End Metaprogramming part
