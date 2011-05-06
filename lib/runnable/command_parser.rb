@@ -16,8 +16,9 @@
 # along with Runnable.  If not, see <http://www.gnu.org/licenses/>.
 
 
-# <p>Base class to create a command-line parameter parser.</p>
-# <p>It holds that parameters in a hash and the child has
+# Base class to create a command-line parameter parser.
+#
+# It holds that parameters in a hash and the child has
 # to be the one who return the formatted string according
 # to the standard used.</p>
 class Command_parser
