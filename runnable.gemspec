@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{runnable}
-  s.version = "0.1.1"
+  s.version = "0.1.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Rafael García", "Luis Ciudad", "Pedro Navajas", "Javier Aranda"]
-  s.date = %q{2011-05-05}
+  s.date = %q{2011-05-09}
   s.description = %q{Convert a executable command in a Ruby-like class you are able to start, define params and send signals (like kill, or stop)}
   s.email = ["rgarcia@nosolosoftware.biz", "lciudad@nosolosoftware.biz", "pnavajas@nosolosoftware.biz", "jaranda@nosolosoftware.biz"]
   s.extra_rdoc_files = [
@@ -40,6 +40,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<rspec>, ["~> 2.5.0"])
       s.add_development_dependency(%q<cucumber>, ["~> 0.10.2"])
       s.add_development_dependency(%q<jeweler>, ["~> 1.6.0"])
+      s.add_development_dependency(%q<bluecloth>, ["~> 2.1.0"])
     else
       s.add_dependency(%q<publisher>, ["~> 1.1.1"])
       s.add_dependency(%q<rake>, ["~> 0.8.7"])
@@ -47,6 +48,7 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<rspec>, ["~> 2.5.0"])
       s.add_dependency(%q<cucumber>, ["~> 0.10.2"])
       s.add_dependency(%q<jeweler>, ["~> 1.6.0"])
+      s.add_dependency(%q<bluecloth>, ["~> 2.1.0"])
     end
   else
     s.add_dependency(%q<publisher>, ["~> 1.1.1"])
@@ -55,6 +57,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<rspec>, ["~> 2.5.0"])
     s.add_dependency(%q<cucumber>, ["~> 0.10.2"])
     s.add_dependency(%q<jeweler>, ["~> 1.6.0"])
+    s.add_dependency(%q<bluecloth>, ["~> 2.1.0"])
   end
 end
 
