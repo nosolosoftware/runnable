@@ -1,10 +1,7 @@
-Runnable
-========
-A Ruby gem that allow programmer to control UNIX system commands as a Ruby 
-class.
+# Runnable
+A Ruby gem that allow programmer to control UNIX system commands as a Ruby class.
 
-Usage
-=====
+# Usage
 All you have to do is to create a class named exactly as command and make it 
 inherit from class Runnable.
 
@@ -26,9 +23,7 @@ for some important information about the command and its process. Entire
 documentation of this gem can be found under ```./doc``` directory or been generated 
 by ```yardoc```.
 
-Return values
--------------
-
+## Return values
 Runnable uses another gems called ```Publisher```. It allow Runnable to fire 
 events that can be processed or ignored. When a command ends its execution, 
 Runnable always fire and event: ```:finish``` if commands finalized in a correct way 
@@ -57,9 +52,7 @@ This is an example of how can we receive the return value of a command:
 
     my_command.run
 
-Custom exceptions
------------------
-
+## Custom exceptions
 As we saw in previous chapter, if a command execution does not ends 
 succesfully, Runnable fires a ```:fail``` event whit an exceptions array. We can
 add exceptions to that array based on the output of command. For example, we 
@@ -80,13 +73,10 @@ which will be match against the command output, and a value which will be the
 exception added to exception array. This means that if the command output match
 the regular expression, a new exception will be include in ```:fail``` event parameter.
 
-About
-=====
+# About
+Runnable is a gem developed by [NoSoloSoftware](http://nosolosoftware.biz).
 
-Runnable is a gem develop by [NoSoloSoftware](http://nosolosoftware.biz).
-
-License
-=======
+# License
 Runnable is Copyright 2011 NoSoloSoftware, it is free software.
 
 Runnable is distributed under GPLv3 license. More details can be found at COPYING
