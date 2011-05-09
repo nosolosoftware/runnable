@@ -20,7 +20,7 @@
 #
 # It holds that parameters in a hash and the child has
 # to be the one who return the formatted string according
-# to the standard used.</p>
+# to the standard used.
 class Command_parser
   # Create a new instance of the parser.
   def initialize

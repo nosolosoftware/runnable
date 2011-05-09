@@ -16,6 +16,11 @@
 # along with Runnable.  If not, see <http://www.gnu.org/licenses/>.
 
 
+require 'runnable/gnu'
+require 'runnable/extended'
+
+require 'publisher'
+
 # Convert a executable command in a Ruby-like class
 # you are able to start, define params and send signals (like kill, or stop)
 #
@@ -27,13 +32,6 @@
 #   ls = LS.new
 #   ls.alh
 #   ls.run
-#
-# $LOAD_PATH << File.expand_path( './runnable', __FILE__ )
-require 'runnable/gnu'
-require 'runnable/extended'
-
-require 'publisher'
-
 class Runnable
   extend Publisher
   
@@ -117,9 +115,7 @@ class Runnable
     @excep_array = []
     
 
-    # Metaprogramming part
-    # Require the class to parse the command line options
-    # require command_style.to_s.downcase
+    # Metaprogramming part  
     # Create a new instance of the parser class
     @command_line_interface = Object.const_get( command_style.to_s.capitalize.to_sym ).new
     # End Metaprogramming part
@@ -141,8 +137,7 @@ class Runnable
     out_rd, out_wr = IO.pipe
     # Redirect Error I/O
     err_rd, err_wr = IO.pipe
-
-    # 
+ 
     @pid = Process.spawn( "#{@command} #{@input.join( " " )} \
                          #{@options} #{@command_line_interface.parse} \
                          #{@output.join( " " )}", { :out => out_wr, :err => err_wr } )
@@ -308,7 +303,6 @@ class Runnable
   # @param [Array] params Params in the call
   # @param [Block] block Block code in method
   # @return [nil]
-  # @override
   def method_missing( method, *params, &block )
     if params.length > 1
       super( method, params, block )

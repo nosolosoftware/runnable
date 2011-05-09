@@ -13,8 +13,8 @@ require 'rake'
 
 require 'yard'
 YARD::Rake::YardocTask.new('doc') do |t|
-  t.files = ['lib/**/*.rb', 'README.markdown']
-  t.options = ['-m','markdown']
+  t.files = ['lib/runnable.rb', 'lib/runnable/command_parser.rb', 'lib/runnable/gnu.rb', 'lib/runnable/extended.rb']
+  t.options = ['-m','markdown', '-r' , 'README.markdown' , '--tag', 'fire:"Publisher events"', '--list-undoc']
 end 
 
 require 'cucumber'
