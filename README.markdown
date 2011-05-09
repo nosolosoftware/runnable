@@ -20,8 +20,8 @@ And run the command as follows
 
 Many other options are available; you can stop the command, kill it or look 
 for some important information about the command and its process. Entire 
-documentation of this gem can be found under ```./doc``` directory or been generated 
-by ```yardoc```.
+documentation of this gem can be generated using ```yardoc```. To do this use 
+```rake doc```.
 
 ## Return values
 Runnable uses another gems called ```Publisher```. It allow Runnable to fire 
