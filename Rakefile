@@ -13,7 +13,8 @@ require 'rake'
 
 require 'yard'
 YARD::Rake::YardocTask.new('doc') do |t|
-  t.files = ['lib/**/*.rb']
+  t.files = ['lib/**/*.rb', 'README.markdown']
+  t.options = ['-m','markdown']
 end 
 
 require 'cucumber'
