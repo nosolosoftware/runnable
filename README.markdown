@@ -24,32 +24,30 @@ documentation of this gem can be generated using ```yardoc```. To do this use
 ```rake doc```.
 
 ## Return values
-Runnable uses another gems called ```Publisher```. It allow Runnable to fire 
-events that can be processed or ignored. When a command ends its execution, 
-Runnable always fire and event: ```:finish``` if commands finalized in a correct way 
-or ```:fail``` if an error ocurred. In case something went wrong and a ```:fail``` 
-events was fired, Runnable also provide an array containing the command return 
-value as the parameter of a SystemCallError exception and optionally others 
-exceptions ocurred at runtime.
+Runnable has two special methods which are called at the end of a command execution.  
+```:finish``` if commands finalized in a correct way and ```:fail``` if an error 
+ocurred. In case something went wrong and a ```:fail``` method is called, Runnable 
+also provide an array containing the command return value as the parameter of a 
+SystemCallError exception and optionally others exceptions ocurred at runtime.
 
-This is an example of how can we receive the return value of a command:
+This is an example of how we can receive the return value of a command:
 
     class LS < Runnable
-    end
 
-    my_command = LS.new
-
-    my_command.when :finish do
-      puts "Everything went better than expected :)"
-    end
-
-    my_command.when :fail do |exceptions|
-      puts "Something went wrong"
-      exceptions.each do |exception|
-        puts exception.message
+      def finish
+        puts "Everything went better than expected :)"
       end
+
+      def failed( exceptions )
+        puts "Something went wrong :("
+        exceptions.each do |exception|
+          puts exception.message
+        end   
+      end
+
     end
 
+    my_command = LS.new    
     my_command.run
 
 ## Custom exceptions

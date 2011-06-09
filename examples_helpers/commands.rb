@@ -46,6 +46,12 @@ module Commands
       /ls: (.*)/ => ArgumentError
       }
     end
+
+    def failed( exceptions )
+    end
+
+    def finish
+    end
   end
 
   class Find < Runnable

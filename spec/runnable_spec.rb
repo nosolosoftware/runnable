@@ -229,15 +229,8 @@ describe Runnable do
       
       # Set what must happen when getting a fire
 
-      # Example should fail if we get a fire :fail
-      @my_command.when :fail do
-        fail
-      end
-
       # Example should pass when we get a fire :finish
-      @my_command.when :finish do
-        true.should be_true
-      end
+      @my_command.should_receive( :finish )
 
       @my_command.run
       @my_command.join
@@ -245,18 +238,8 @@ describe Runnable do
     
     it "should return an argument exception" do
       @my_command = LS.new( {:command_options => '-invalid_option', :delete_log => false} )
-      
-      # Set what must happen when getting a fire
-      
-      # if we get a finish publish, it should fail!
-      @my_command.when :finish do
-        fail
-      end
-      # if we get a :fail publish, we go throught the good way
-      @my_command.when :fail do |array|
-        # Exceptions array must not be empty, because we failed :P
-        array.empty?.should_not be_true
-      end
+
+      @my_command.should_receive( :failed )
 
       @my_command.run 
       @my_command.join
@@ -387,7 +370,7 @@ describe Runnable do
 
     it "Should return the current cpu usage (random)" do
       # We are going to use command line vlc for this example
-      @my_vlc = CVLC.new(:command_options => "examples_helpers/song.mp3")
+      @my_vlc = CVLC.new(:command_options => "examples_helpers/song.mp3", :delete_log => false)
 
       @my_vlc.run
       # Wait until all is loaded, to avoid different measures
