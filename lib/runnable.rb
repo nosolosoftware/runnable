@@ -19,8 +19,6 @@
 require 'runnable/gnu'
 require 'runnable/extended'
 
-require 'publisher'
-
 # Convert a executable command in a Ruby-like class
 # you are able to start, define params and send signals (like kill, or stop)
 #
@@ -32,12 +30,7 @@ require 'publisher'
 #   ls = LS.new
 #   ls.alh
 #   ls.run
-class Runnable
-  extend Publisher
-  
-  # Fires to know whats happening inside
-  can_fire :fail, :finish
-
+class Runnable  
   # Process id.
   attr_reader :pid
   # Process owner.
@@ -127,8 +120,6 @@ class Runnable
   
   # Start the execution of the command.
   # @return [nil]
-  # @fire :finish
-  # @fire :fail
   def run
     # Create a new mutex
     @pid_mutex = Mutex.new
@@ -172,11 +163,11 @@ class Runnable
       # In case of error add an Exception to the @excep_array
       @excep_array << SystemCallError.new( exit_status ) if exit_status != 0
       
-      # Fire signals according to the exit code
+      # Call methods according to the exit code
       if @excep_array.empty?
-        fire :finish
+        finish
       else
-        fire :fail, @excep_array
+        failed( @excep_array )
       end
       
       # This instance is finished and we remove it
@@ -343,6 +334,21 @@ class Runnable
     {}
   end
   
+  # @abstract
+  # Method called when command ends with no erros.
+  # This method is a hook so it should be overwritten in child classes.
+  # @return [nil]
+  def finish
+  end
+
+  # @abstract
+  # Method called when command executions fail.
+  # This method is a hook so it should be overwritten in child classes.
+  # @param [Array] exceptions Array containing exceptions raised during the command execution.
+  # @return [nil]
+  def failed( exceptions )
+  end
+
   protected
   
   # Send the desired signal to the command.
