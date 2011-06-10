@@ -1,8 +1,6 @@
 # Gems source
 source :rubygems
 
-gem 'publisher', '>= 1.1.1' # Asynchronous
-
 group :development do
   gem 'rake', '>= 0.8.7' # For run tests
   gem 'yard', '>= 0.6.8' # Documentation
