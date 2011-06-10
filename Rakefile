@@ -41,7 +41,7 @@ Jeweler::Tasks.new do |gem|
   # dependencies defined in Gemfile
 
   # Files not included
-  ['Gemfile', 'Rakefile', 'examples_helpers', 'features', 'spec'].each do |d|
+  ['Gemfile', 'Rakefile', 'examples_helpers/**/*', 'features/**/*', 'spec/**/*'].each do |d|
     gem.files.exclude d
   end
 end

@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{runnable}
-  s.version = "0.1.2"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Rafael García", "Luis Ciudad", "Pedro Navajas", "Javier Aranda"]
-  s.date = %q{2011-05-09}
+  s.date = %q{2011-06-10}
   s.description = %q{Convert a executable command in a Ruby-like class you are able to start, define params and send signals (like kill, or stop)}
   s.email = ["rgarcia@nosolosoftware.biz", "lciudad@nosolosoftware.biz", "pnavajas@nosolosoftware.biz", "jaranda@nosolosoftware.biz"]
   s.extra_rdoc_files = [
@@ -22,42 +22,41 @@ Gem::Specification.new do |s|
     "lib/runnable.rb",
     "lib/runnable/command_parser.rb",
     "lib/runnable/extended.rb",
-    "lib/runnable/gnu.rb"
+    "lib/runnable/gnu.rb",
+    "runnable.gemspec"
   ]
   s.homepage = %q{http://github.com/nosolosoftware/runnable}
   s.licenses = ["GPL-3"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.7.2}
+  s.rubygems_version = %q{1.3.7}
   s.summary = %q{A Ruby gem for execute and control system commands}
 
   if s.respond_to? :specification_version then
+    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<publisher>, ["~> 1.1.1"])
-      s.add_development_dependency(%q<rake>, ["~> 0.8.7"])
-      s.add_development_dependency(%q<yard>, ["~> 0.6.8"])
-      s.add_development_dependency(%q<rspec>, ["~> 2.5.0"])
-      s.add_development_dependency(%q<cucumber>, ["~> 0.10.2"])
-      s.add_development_dependency(%q<jeweler>, ["~> 1.6.0"])
-      s.add_development_dependency(%q<bluecloth>, ["~> 2.1.0"])
+      s.add_development_dependency(%q<rake>, [">= 0.8.7"])
+      s.add_development_dependency(%q<yard>, [">= 0.6.8"])
+      s.add_development_dependency(%q<rspec>, [">= 2.5.0"])
+      s.add_development_dependency(%q<cucumber>, [">= 0.10.2"])
+      s.add_development_dependency(%q<jeweler>, [">= 1.6.0"])
+      s.add_development_dependency(%q<bluecloth>, [">= 2.1.0"])
     else
-      s.add_dependency(%q<publisher>, ["~> 1.1.1"])
-      s.add_dependency(%q<rake>, ["~> 0.8.7"])
-      s.add_dependency(%q<yard>, ["~> 0.6.8"])
-      s.add_dependency(%q<rspec>, ["~> 2.5.0"])
-      s.add_dependency(%q<cucumber>, ["~> 0.10.2"])
-      s.add_dependency(%q<jeweler>, ["~> 1.6.0"])
-      s.add_dependency(%q<bluecloth>, ["~> 2.1.0"])
+      s.add_dependency(%q<rake>, [">= 0.8.7"])
+      s.add_dependency(%q<yard>, [">= 0.6.8"])
+      s.add_dependency(%q<rspec>, [">= 2.5.0"])
+      s.add_dependency(%q<cucumber>, [">= 0.10.2"])
+      s.add_dependency(%q<jeweler>, [">= 1.6.0"])
+      s.add_dependency(%q<bluecloth>, [">= 2.1.0"])
     end
   else
-    s.add_dependency(%q<publisher>, ["~> 1.1.1"])
-    s.add_dependency(%q<rake>, ["~> 0.8.7"])
-    s.add_dependency(%q<yard>, ["~> 0.6.8"])
-    s.add_dependency(%q<rspec>, ["~> 2.5.0"])
-    s.add_dependency(%q<cucumber>, ["~> 0.10.2"])
-    s.add_dependency(%q<jeweler>, ["~> 1.6.0"])
-    s.add_dependency(%q<bluecloth>, ["~> 2.1.0"])
+    s.add_dependency(%q<rake>, [">= 0.8.7"])
+    s.add_dependency(%q<yard>, [">= 0.6.8"])
+    s.add_dependency(%q<rspec>, [">= 2.5.0"])
+    s.add_dependency(%q<cucumber>, [">= 0.10.2"])
+    s.add_dependency(%q<jeweler>, [">= 1.6.0"])
+    s.add_dependency(%q<bluecloth>, [">= 2.1.0"])
   end
 end
 
