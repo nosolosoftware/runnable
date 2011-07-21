@@ -18,7 +18,7 @@
 require 'runnable/command_parser'
 
 # Parse the parameter hash using the extended standard.
-class Extended < Command_parser  
+class Extended < CommandParser  
 
   # Convert a hash in a Extended style string options.
   # @return [String] Extended-style parsed params in a raw character array.

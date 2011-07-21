@@ -18,7 +18,7 @@
 require 'runnable/command_parser'
 
 # Parse the parameter hash using the GNU standard.
-class Gnu < Command_parser
+class Gnu < CommandParser
 
   # This method convert a hash in a string ready to
   # be passed to a command that uses GNU style to parse command line
