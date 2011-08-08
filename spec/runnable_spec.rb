@@ -67,7 +67,18 @@ describe Runnable do
       # Check if the process name is the same of our command class
       $4.should == @my_command.class.to_s.split( "::" ).last.downcase      
     end
-    
+   
+    it "should know if a process is running on the system" do
+      @my_command = Commands::VLC.new
+      @my_command.run
+
+      @my_command.running?.should be_true
+
+      @my_command.kill
+
+      @my_command.running?.should be_false
+    end
+
     # As we are using blocking commands, we need to terminate the execution
     after( :each ) do
       @my_command.kill

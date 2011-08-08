@@ -222,6 +222,10 @@ class Runnable
     @run_thread.join if @run_thread.alive?
   end
 
+  def running?
+    Dir.exists?( "/proc/#{@pid}") 
+  end
+
   # Calculate the estimated memory usage in Kb.
   # @return [Number] Estimated mem usage in Kb.
   def mem
