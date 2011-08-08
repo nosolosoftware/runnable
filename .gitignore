@@ -4,3 +4,6 @@ Gemfile.lock
 .DS_Store
 .yardoc
 doc
+.bundle/
+example_helpers/
+pkg/
