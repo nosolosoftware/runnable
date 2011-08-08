@@ -482,4 +482,30 @@ describe Runnable do
       File.delete( "examples_helpers/gcc_output" )
     end
   end
+
+  describe "Behavior with child processes" do
+    it "should send a signal to every child process" do
+      @my_vlc = Commands::VLC.new( :delete_log => false)
+      @my_vlc.input "http://root:lirio@172.16.8.11/video.mjpg --sout '#std{access=file, mux=ts, dst=video.mjpg}' -I dummy"
+      @my_vlc.run
+
+      # There should be 2 processes, a sh and a child vlc  
+      child_pid = nil
+      `ps -ef`.each_line do |line|
+        child_pid = line.split[1] if line.split[2].to_i == @my_vlc.pid
+      end
+
+      sleep 5
+      @my_vlc.send_signal( :SIGHUP )
+
+      # Those 2 processes should no exist anymore
+      `ps -ef`.each_line do |line|
+        line.split[1].to_i.should_not == child_pid
+        line.split[1].to_i.should_not == @my_vlc.pid
+      end
+
+      File.delete( "video.mjpg" )
+    end
+  end
+
 end

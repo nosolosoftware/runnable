@@ -348,21 +348,36 @@ class Runnable
   # @return [nil]
   def failed( exceptions )
   end
-
-  protected
   
   # Send the desired signal to the command.
   # @param [Symbol] Signal to be send to the command.
   # @todo raise ESRCH if pid is not in system
   #   or EPERM if pid is not from user.
-  def send_signal( signal )
+  def send_signal( signal )      
     if signal == :stop
-      Process.kill( :SIGINT, @pid )
+      signal = :SIGINT
     elsif signal == :kill
-      Process.kill( :SIGKILL, @pid )
+      signal = :SIGKILL
+    end
+    
+    `ps -ef`.each_line do |line|
+      line = line.split
+      pid = line[1]
+      ppid = line[2]
+     
+      if ppid.to_i == @pid
+        Process.kill( signal, pid.to_i )
+      end
+    end
+    
+    begin
+      Process.kill( signal, @pid )
+    rescue Errno::ESRCH
+      # As we kill child processes, main process may have exit already
     end
   end
-  
+
+  protected
   # Redirect command I/O to log files.
   # These files are located in /var/log/runnable.
   # @param [Hash] Outputs options.
