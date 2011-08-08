@@ -18,6 +18,7 @@
 
 require 'runnable/gnu'
 require 'runnable/extended'
+require 'fileutils'
 
 # Convert a executable command in a Ruby-like class
 # you are able to start, define params and send signals (like kill, or stop)
