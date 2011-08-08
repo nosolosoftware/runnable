@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Rafael García", "Luis Ciudad", "Pedro Navajas", "Javier Aranda"]
-  s.date = %q{2011-06-10}
+  s.date = %q{2011-08-03}
   s.description = %q{Convert a executable command in a Ruby-like class you are able to start, define params and send signals (like kill, or stop)}
   s.email = ["rgarcia@nosolosoftware.biz", "lciudad@nosolosoftware.biz", "pnavajas@nosolosoftware.biz", "jaranda@nosolosoftware.biz"]
   s.extra_rdoc_files = [
@@ -28,11 +28,10 @@ Gem::Specification.new do |s|
   s.homepage = %q{http://github.com/nosolosoftware/runnable}
   s.licenses = ["GPL-3"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.3.7}
+  s.rubygems_version = %q{1.7.2}
   s.summary = %q{A Ruby gem for execute and control system commands}
 
   if s.respond_to? :specification_version then
-    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
