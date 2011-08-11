@@ -31,14 +31,17 @@ class Gnu < CommandParser
       # We assume that an one character words is preceed by one
       # lead and two or more characters words are preceed by two 
       # leads
-      result << ( param.length == 1 ? "-#{param} " : "--#{param} " )
+      result.concat( param.length == 1 ? "-#{param}" : "--#{param}" )
 
       # In case the param have parameter we use the correct assignation
       #   -Param followed by value (without whitespace) to one character params
       #   -Param followed by '=' and value to more than one character params
       if( value != nil )
-        result << ( param.length == 1 ? "#{value}" : "=#{value}" )
+        result.concat( param.length == 1 ? "#{value}" : "=#{value}" )
       end
+
+      # Final whitespace
+      result.concat( " " )
     end
 
     return result.strip

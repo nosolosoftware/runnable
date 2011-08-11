@@ -129,11 +129,18 @@ class Runnable
     out_rd, out_wr = IO.pipe
     # Redirect Error I/O
     err_rd, err_wr = IO.pipe
- 
-    @pid = Process.spawn( "#{@command} #{@input.join( " " )} \
-                         #{@options} #{@command_line_interface.parse} \
-                         #{@output.join( " " )}", { :out => out_wr, :err => err_wr } )
+    
+    # Set up the command line
+    command = []          
+    command << @command
+    command << @input.join( " " )
+    command << @options
+    command << @command_line_interface.parse
+    command << @output.join( " " )
+    command = command.join( " " )
 
+    @pid = Process.spawn( command, { :out => out_wr, :err => err_wr } )
+    
     # Include instance in class variable
     @@processes[@pid] = self
 
@@ -430,8 +437,10 @@ class Runnable
   def parse_hash( hash )
     hash.each do |key, value|
       # Add the param parsed to command_line_interface
-      @command_line_interface.add_param( key.to_s,
-                                          value != nil ? value.to_s : nil )
+      @command_line_interface.add_param( 
+        key.to_s,
+        value != nil ? value.to_s : nil 
+        )
     end
   end
 end
