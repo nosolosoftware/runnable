@@ -431,7 +431,7 @@ class Runnable
     hash.each do |key, value|
       # Add the param parsed to command_line_interface
       @command_line_interface.add_param( key.to_s,
-                                          params != nil ? params.join(",") : nil )
+                                          value != nil ? value.to_s : nil )
     end
   end
 end
