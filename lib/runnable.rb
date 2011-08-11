@@ -429,9 +429,9 @@ class Runnable
   # @return [nil]
   def parse_hash( hash )
     hash.each do |key, value|
-      # Call to a undefined method which trigger overwritten method_missing
-      # unless its named as a runnable method
-      self.public_send( key.to_sym, value ) unless self.respond_to?( key.to_sym )
+      # Add the param parsed to command_line_interface
+      @command_line_interface.add_param( key.to_s,
+                                          params != nil ? params.join(",") : nil )
     end
   end
 end
