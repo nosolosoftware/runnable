@@ -40,7 +40,13 @@ class Runnable
   attr_reader :group
   # Directory where process was called from.
   attr_reader :pwd
-  
+
+  # Input file
+  attr_accessor :input
+
+  # Set the output file
+  attr_accessor :output
+
   # Metaprogramming part of the class
   
   # Define the parameter style to be used.
@@ -96,10 +102,10 @@ class Runnable
     end
 
     # Store input options
-    @input = Array.new
+    @input = String.new
 
     # Store output options
-    @output = Array.new
+    @output = String.new
 
     # @todo: checks that command is in the PATH
     # ...
@@ -133,10 +139,10 @@ class Runnable
     # Set up the command line
     command = []          
     command << @command
-    command << @input.join( " " )
+    command << @input
     command << @options
     command << @command_line_interface.parse
-    command << @output.join( " " )
+    command << @output
     command = command.join( " " )
 
     @pid = Process.spawn( command, { :out => out_wr, :err => err_wr } )
@@ -273,20 +279,6 @@ class Runnable
       0
     end
 
-  end
-
-  # Set the input files.
-  # @param [String] param Input to be parsed as command options.
-  # @return [nil]
-  def input( param )
-    @input << param
-  end
-
-  # Set the output files.
-  # @param [String] param Output to be parsed as command options.
-  # @return [nil]
-  def output( param )
-    @output << param
   end
 
   # Convert undefined methods (ruby-like syntax) into parameters

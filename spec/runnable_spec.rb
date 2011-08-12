@@ -402,7 +402,7 @@ describe Runnable do
     it "should add a file as input" do
       @my_bc = BC.new
 
-      @my_bc.input "./examples_helpers/bc_big_operation"
+      @my_bc.input = "./examples_helpers/bc_big_operation"
 
       @my_bc.run
 
@@ -416,8 +416,8 @@ describe Runnable do
     it "should save the output to a file" do
       @my_bc = BC.new
 
-      @my_bc.input "./examples_helpers/bc_small_operation"
-      @my_bc.output "> ./examples_helpers/bc_output"
+      @my_bc.input = "./examples_helpers/bc_small_operation"
+      @my_bc.output = "> ./examples_helpers/bc_output"
 
       @my_bc.run
 
@@ -438,7 +438,7 @@ describe Runnable do
       @my_find.iname '"*.rb"'
       @my_find.type '"f"'      
 
-      @my_find.output '> ./examples_helpers/command_output.log'
+      @my_find.output = '> ./examples_helpers/command_output.log'
 
       @my_find.run
 
@@ -466,7 +466,7 @@ describe Runnable do
         @my_find.options( { :depth => nil, :iname => '"*.rb"', :type => '"f"' } )
         }.should_not raise_error ( Exception )
 
-      @my_find.output '> examples_helpers/command_output.log'
+      @my_find.output = '> examples_helpers/command_output.log'
       @my_find.run
 
       @my_find.join
@@ -482,7 +482,7 @@ describe Runnable do
 
     it "should parse gnu params if no command style is set" do
       @my_gcc = Commands::GCC.new( :delete_log => false )
-      @my_gcc.input 'examples_helpers/program.c'
+      @my_gcc.input = 'examples_helpers/program.c'
       @my_gcc.o "examples_helpers/gcc_output"
       @my_gcc.run
 
@@ -497,7 +497,7 @@ describe Runnable do
   describe "Behavior with child processes" do
     it "should send a signal to every child process" do
       @my_vlc = Commands::VLC.new( :delete_log => false)
-      @my_vlc.input "http://root:lirio@172.16.8.11/video.mjpg --sout '#std{access=file, mux=ts, dst=video.mjpg}' -I dummy"
+      @my_vlc.input = "http://root:lirio@172.16.8.11/video.mjpg --sout '#std{access=file, mux=ts, dst=video.mjpg}' -I dummy"
       @my_vlc.run
 
       # There should be 2 processes, a sh and a child vlc  
