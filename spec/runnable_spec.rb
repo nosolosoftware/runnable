@@ -202,7 +202,41 @@ describe Runnable do
      
     end
 
+    it "should store the standar output in a instance variable" do
+      @my_command = LS.new( {:delete_log => false} )
+      @my_command.run
+      
+      @my_command.join
+     
+      # Get the system command output
+      system_output = `ls`
+
+      # System command and log file output should be the same
+      system_output.should == @my_command.std_out
+    end
+    
+    it "should store the error output in a instance variable" do
+      @my_command = LS.new(
+         {:command_options => "-invalid_option",
+          :delete_log => false})
+          
+      @my_command.run
+
+      @my_command.join       
+      # Get the system command output
+
+      # Get pipes to redirect IO
+      rd, wr = IO.pipe
+
+      # Call to command system
+      Kernel.system( 'ls -invalid_option', :err => wr )
+      wr.close
+      
+      
+      @my_command.std_err.should == rd.read
+    end
   end
+
   describe "managing log files" do
     it "Should delete log files by default" do
       @my_command = BC.new()

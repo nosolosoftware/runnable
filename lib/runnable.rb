@@ -107,6 +107,12 @@ class Runnable
     # Store output options
     @output = String.new
 
+    # Standar Outputs
+    @std_output = {
+      :out => "",
+      :err => ""
+      }
+
     # @todo: checks that command is in the PATH
     # ...
     
@@ -236,8 +242,22 @@ class Runnable
     @run_thread.join if @run_thread.alive?
   end
 
+  # Check if prcess is running on the system.
+  # @return [Bool] True if process is running, false if it is not.
   def running?
     Dir.exists?( "/proc/#{@pid}") 
+  end
+
+  # Standar output of command
+  # @return [String] Standar output
+  def std_out
+    @std_output[:out]
+  end
+
+  # Standar error output of the command
+  # @return [String] Standar error output
+  def std_err
+    @std_output[:err]
   end
 
   # Calculate the estimated memory usage in Kb.
@@ -399,7 +419,11 @@ class Runnable
       @output_threads << Thread.new do
         pipes[0].close
 
+        @std_output[output_name] = ""
+
         pipes[1].each_line do |line|
+          @std_output[output_name] << line
+
           File.open("#{@log_path}#{@command}_#{@pid}.log", "a") do |log_file|
             log_file.puts( "[#{Time.new.inspect} || [STD#{output_name.to_s.upcase} || [#{@pid}]] #{line}" )
           end
