@@ -24,7 +24,7 @@ Cucumber::Rake::Task.new(:features) do |t|
 end
 
 require 'rspec/core/rake_task'
-RSpec::Core::RakeTask.new(:rspec) do |t|
+RSpec::Core::RakeTask.new(:spec) do |t|
   t.rspec_opts = ["--format doc", "--color"]
 end
 
