@@ -301,6 +301,24 @@ class Runnable
 
   end
 
+  # Estimated bandwidth in kb/s.
+  # @param [String] iface Interface to be scaned.
+  # @param [Number] sample_time Time passed between samples in seconds.
+  #   The longest lapse the more accurate stimation.
+  # @return [Number] The estimated bandwidth used.
+  def bandwidth( iface, sample_lapse = 0.1 )
+    file = "/proc/#{@pid}/net/dev"
+    File.open( file ).read =~ /#{iface}:\s+(\d+)\s+/
+    init = $1.to_i
+    
+    sleep sample_lapse
+
+    File.open( file ).read =~ /#{iface}:\s+(\d+)\s+/
+    finish = $1.to_i
+
+    (finish - init)*(1/sample_lapse)/1024
+  end
+
   # Convert undefined methods (ruby-like syntax) into parameters
   # to be parsed at the execution time.
   # This only convert methods with zero or one parameters. A hash can be passed

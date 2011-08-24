@@ -432,6 +432,17 @@ describe Runnable do
 
   end
 
+  describe "Bandwith usage" do
+    it "should return a number in kb/s" do
+      # This test would have to be changed, too many harcoded options
+      @my_vlc = CVLC.new( :command_options => "http://root:lirio@172.16.8.11/video.mjpg -I dummy vlc://quit" )
+      @my_vlc.run
+      sleep 2
+      @my_vlc.bandwidth( "eth0" ).should be_between( 50, 3000 )
+      @my_vlc.stop
+    end
+  end
+
   describe "Input and Output Methods" do
     it "should add a file as input" do
       @my_bc = BC.new
