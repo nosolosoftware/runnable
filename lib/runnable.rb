@@ -141,7 +141,11 @@ class Runnable
     out_rd, out_wr = IO.pipe
     # Redirect Error I/O
     err_rd, err_wr = IO.pipe
-    
+   
+    # Reset exceptions array to not store exceptions for
+    # past executions
+    @excep_array = []
+
     # Set up the command line
     command = []          
     command << @command
