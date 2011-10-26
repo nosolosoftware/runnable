@@ -20,14 +20,10 @@ require 'runnable/command_parser'
 # Parse the parameter hash using the extended standard.
 class Extended < CommandParser  
 
-  # Convert a hash in a Extended style string options.
-  # @return [String] Extended-style parsed params in a raw character array.
+  # Convert a hash in an array of 'Extended style' option strings.
+  # @return [Array] Extended-style parsed params.
   def parse
-    options = ""
-    @params.each do | param , value |
-      options = "#{options} -#{param} #{value} "
-    end
-    options.strip
+    @params.collect { |param , value|  ["-#{param}", "#{value}"] }
   end
 
 end

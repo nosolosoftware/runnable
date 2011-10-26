@@ -432,13 +432,19 @@ describe Runnable do
 
   end
 
-  describe "Bandwith usage" do
+  describe "Bandwidth usage" do
     it "should return a number in kb/s" do
       # This test would have to be changed, too many harcoded options
-      @my_vlc = CVLC.new( :command_options => "http://root:lirio@172.16.8.11/video.mjpg -I dummy vlc://quit" )
+      @my_vlc = CVLC.new( :command_options => "vlc://quit" )
+
+      @my_vlc.input = "http://root:lirio@172.16.8.11/video.mjpg"
+      @my_vlc.sout "#std{access=file,mux=ts,dst=./examples_helpers/video.mjpg}"
+
       @my_vlc.run
-      sleep 2
+      
+      sleep 7
       @my_vlc.bandwidth( "eth0" ).should be_between( 50, 3000 )
+      
       @my_vlc.stop
     end
   end
@@ -480,10 +486,9 @@ describe Runnable do
       @my_find = Commands::Find.new( { :delete_log => false } )
 
       @my_find.depth
-      @my_find.iname '"*.rb"'
-      @my_find.type '"f"'      
-
-      @my_find.output = '> ./examples_helpers/command_output.log'
+      @my_find.iname "*.rb"
+      @my_find.type "f"      
+      @my_find.fprint "./examples_helpers/command_output.log"
 
       @my_find.run
 
@@ -494,7 +499,7 @@ describe Runnable do
       output = File.open( "./examples_helpers/command_output.log" ).read.split( "\n" )
 
       `find -depth -iname "*.rb" -type "f"`.split( "\n" ).should ==( output )
-      File.delete( "./examples_helpers/command_output.log" )    
+      #File.delete( "./examples_helpers/command_output.log" )    
     end
 
     it "should not parse methods whit two or more parameters" do
@@ -508,10 +513,10 @@ describe Runnable do
     it "should parse an undefined method with a hash as argument" do
       @my_find = Commands::Find.new
       lambda { 
-        @my_find.options( { :depth => nil, :iname => '"*.rb"', :type => '"f"' } )
+        @my_find.options( { :depth => nil, :iname => '*.rb', :type => 'f' } )
         }.should_not raise_error ( Exception )
 
-      @my_find.output = '> examples_helpers/command_output.log'
+      @my_find.fprint './examples_helpers/command_output.log'
       @my_find.run
 
       @my_find.join
@@ -539,10 +544,12 @@ describe Runnable do
     end
   end
 
+# This is obsolete since we dont use sh -c call anymore
+=begin
   describe "Behavior with child processes" do
     it "should send a signal to every child process" do
       @my_vlc = Commands::VLC.new( :delete_log => false)
-      @my_vlc.input = "http://root:lirio@172.16.8.11/video.mjpg --sout '#std{access=file, mux=ts, dst=video.mjpg}' -I dummy"
+      @my_vlc.input = "http://xxxx:xxxx@172.16.8.11/video.mjpg --sout '#std{access=file, mux=ts, dst=video.mjpg}' -I dummy"
       @my_vlc.run
 
       # There should be 2 processes, a sh and a child vlc  
@@ -563,5 +570,5 @@ describe Runnable do
       File.delete( "video.mjpg" )
     end
   end
-
+=end
 end

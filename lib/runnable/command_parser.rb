@@ -37,7 +37,7 @@ class CommandParser
 
   # This method has to be overwritten in the child
   # @abstract 
-  # @return [String]
+  # @return [Array]
   def parse
   end
 end

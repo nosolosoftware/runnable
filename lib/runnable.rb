@@ -148,15 +148,28 @@ class Runnable
 
     # Set up the command line
     command = []          
-    command << @command
-    command << @input
-    command << @options
+    #command << @command
+    command << @input.to_s
+    command << @options.to_s
     command << @command_line_interface.parse
-    command << @output
-    command = command.join( " " )
-
-    @pid = Process.spawn( command, { :out => out_wr, :err => err_wr } )
+    command << @output.to_s
+    #command = command.join( " " )
+    command.flatten!
     
+    command = command.select do |value| 
+      !value.to_s.strip.empty?
+    end
+=begin
+    # Debugging purpose
+    puts "I: #{@input}"
+    puts "OP: #{@options}"
+    puts "CLI: #{@command_line_interface.parse}"
+    puts "O: #{@output}"
+    puts "C: #{command}"
+=end
+    #@pid = Process.spawn( command, { :out => out_wr, :err => err_wr } )
+    @pid = Process.spawn( @command, *command, { :out => out_wr, :err => err_wr } )
+
     # Include instance in class variable
     @@processes[@pid] = self
 

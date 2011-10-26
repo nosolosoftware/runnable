@@ -20,30 +20,26 @@ require 'runnable/command_parser'
 # Parse the parameter hash using the GNU standard.
 class Gnu < CommandParser
 
-  # This method convert a hash in a string ready to
+  # This method convert a hash in an array of strings ready to
   # be passed to a command that uses GNU style to parse command line
   # parameters.
-  # @return [String] Gnu-style parsed params in a raw character array.
+  # @return [Array] Gnu-style parsed params in a string array.
   def parse
-    result = ""
-
-    @params.each do |param, value|      
+    @params.collect do |param, value|
       # We assume that an one character words is preceed by one
       # lead and two or more characters words are preceed by two 
       # leads
-      result.concat( param.length == 1 ? "-#{param}" : "--#{param}" )
+      option = ( param.length == 1 ? "-#{param}" : "--#{param}" )
 
       # In case the param have parameter we use the correct assignation
-      #   -Param followed by value (without whitespace) to one character params
+      #   -Param followed by value (whitout whitespace) to one character params
       #   -Param followed by '=' and value to more than one character params
       if( value != nil )
-        result.concat( param.length == 1 ? "#{value}" : "=#{value}" )
+        option.concat( param.length == 1 ? "#{value}" : "=#{value}" )
       end
 
-      # Final whitespace
-      result.concat( " " )
+      option
     end
-
-    return result.strip
   end
+
 end
