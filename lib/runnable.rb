@@ -124,6 +124,7 @@ class Runnable
     # we dont set the pid, because we dont know until run
     @pid = nil
     @excep_array = []
+    @outputs = Hash.new
     
 
     # Metaprogramming part  
@@ -149,32 +150,11 @@ class Runnable
    
     # Reset exceptions array to not store exceptions for
     # past executions
-    @excep_array = []
 
-    # Set up the command line
-    command = []          
-    #command << @command
-    command << @input.to_s
-    command << @options.to_s
-    command << @command_line_interface.parse
-    command << @output.to_s
-    #command = command.join( " " )
-    command.flatten!
-    
-    command = command.select do |value| 
-      !value.to_s.strip.empty?
-    end
+    command = compose_command
 
     @logger.debug("Running #{@command} #{command}")
-=begin
-    # Debugging purpose
-    puts "I: #{@input}"
-    puts "OP: #{@options}"
-    puts "CLI: #{@command_line_interface.parse}"
-    puts "O: #{@output}"
-    puts "C: #{command}"
-=end
-    #@pid = Process.spawn( command, { :out => out_wr, :err => err_wr } )
+
     @pid = Process.spawn( @command, *command, { :out => out_wr, :err => err_wr } )
 
     # Include instance in class variable
@@ -264,6 +244,7 @@ class Runnable
   # @return [nil]
   def join
     @run_thread.join if @run_thread.alive?
+    @outputs unless @outputs.empty?
   end
 
   # Check if prcess is running on the system.
@@ -382,6 +363,18 @@ class Runnable
   end
  
   # @abstract 
+  # Returns a hash of regular expressions and outputs associated to them.
+  # Command output is match against those regular expressions, if it does match
+  # then the result is collected into an array that is returned when join() is called. 
+  # @note This method should be overwritten in child classes.
+  # @see exceptions
+  # @return [Hash] Using regular expressions as keys and exceptions that should
+  #   be stored.
+	def outputs
+    {}
+  end
+
+  # @abstract 
   # Returns a hash of regular expressions and exceptions associated to them.
   # Command output is match against those regular expressions, if it does match
   # an appropiate exception is included in the return value of execution. 
@@ -449,14 +442,14 @@ class Runnable
   # @option outputs stream [Symbol] Stream name.
   # @option outputs pipes [IO] I/O stream to be redirected.
   # @return [nil]
-  def create_logs( outputs = {} )
+  def create_logs( output_streams = {} )
     # Create an empty file for logging
     FileUtils.touch "#{@log_path}/#{@command}_#{@pid}.log"
 
     @output_threads = []
     # for each io stream we create a thread wich read that 
     # stream and write it in a log file
-    outputs.each do |output_name, pipes|
+    output_streams.each do |output_name, pipes|
       @output_threads << Thread.new do
         pipes[0].close
 
@@ -472,21 +465,20 @@ class Runnable
           # if we get a positive match, add it to the exception array
           # in order to inform the user of what had happen
           exceptions.each do | reg_expr, value |
-  					@excep_array<< value.new( $1 ) if reg_expr =~ line
+            @logger.debug(reg_expr)
+            @logger.debug(line)
+  					@excep_array << value.new( $1 ) if reg_expr =~ line
+          end
+
+          outputs.each do | reg_expr, value |
+            @outputs[value] ||= Array.new
+            @outputs[value] << $1 if reg_expr =~ line
           end
         end
       end
     end
   end
   
-  def create_log_directory
-    Dir.mkdir( @log_path ) unless Dir.exist?( @log_path )
-  end
-  
-  def delete_log
-    File.delete( "#{@log_path}#{@command}_#{@pid}.log" ) if @delete_log == true
-  end
-
   # Expand a parameter hash calling each key as method and value as param
   # forcing method misssing to be called.
   # @param [Hash] hash Parameters to be expand and included in command execution
@@ -498,6 +490,30 @@ class Runnable
         key.to_s,
         value != nil ? value.to_s : nil 
         )
+    end
+  end
+
+  private
+
+  def create_log_directory
+    Dir.mkdir( @log_path ) unless Dir.exist?( @log_path )
+  end
+  
+  def delete_log
+    File.delete( "#{@log_path}#{@command}_#{@pid}.log" ) if @delete_log == true
+  end
+
+  def compose_command
+    command = Array.new
+
+    command << @input.to_s
+    command << @options.to_s
+    command << @command_line_interface.parse
+    command << @output.to_s
+    command.flatten!
+    
+    command.select do |value|
+      !value.to_s.strip.empty?
     end
   end
 end
