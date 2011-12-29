@@ -19,6 +19,7 @@
 require 'runnable/gnu'
 require 'runnable/extended'
 require 'fileutils'
+require 'logger'
 
 # Convert a executable command in a Ruby-like class
 # you are able to start, define params and send signals (like kill, or stop)
@@ -75,6 +76,10 @@ class Runnable
   # @option option_hash :command_options ("") Command options.
   # @option option_hash :log_path ("/var/log/runnable") Path for the log files.
   def initialize( option_hash = {} )
+    # Initialize the ruby logger
+    @logger = Logger.new(STDOUT)
+    @logger.level = option_hash[:debug] ? Logger::DEBUG : Logger::WARN
+
     # keys :delete_log
     #      :command_options
     #      :log_path
@@ -159,6 +164,8 @@ class Runnable
     command = command.select do |value| 
       !value.to_s.strip.empty?
     end
+
+    @logger.debug("Running #{@command} #{command}")
 =begin
     # Debugging purpose
     puts "I: #{@input}"
@@ -363,8 +370,7 @@ class Runnable
         # @see parse_hash for more information
 				parse_hash( params[0] )
       else
-        @command_line_interface.add_param( method.to_s,
-                                          params != nil ? params.join(",") : nil )
+        @command_line_interface.add_param( method.to_s, params != nil ? params.join(",") : nil )
       end
     end
   end
@@ -445,7 +451,7 @@ class Runnable
   # @return [nil]
   def create_logs( outputs = {} )
     # Create an empty file for logging
-    FileUtils.touch "#{@log_path}#{@command}_#{@pid}.log"
+    FileUtils.touch "#{@log_path}/#{@command}_#{@pid}.log"
 
     @output_threads = []
     # for each io stream we create a thread wich read that 
@@ -459,7 +465,7 @@ class Runnable
         pipes[1].each_line do |line|
           @std_output[output_name] << line
 
-          File.open("#{@log_path}#{@command}_#{@pid}.log", "a") do |log_file|
+          File.open("#{@log_path}/#{@command}_#{@pid}.log", "a") do |log_file|
             log_file.puts( "[#{Time.new.inspect} || [STD#{output_name.to_s.upcase} || [#{@pid}]] #{line}" )
           end
           # Match custom exceptions
