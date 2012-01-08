@@ -47,7 +47,7 @@ describe Runnable do
       File.open("/proc/#{@my_command.pid}/stat", "r") do | file |
         data = file.read.split( " " )
         data[0].to_i.should == @my_command.pid
-        data[1].should == "(#{@my_command.class.to_s.split( "::" ).last.downcase})"          
+        data[1].should == "(#{@my_command.command.to_s.split( "::" ).last.downcase})"          
       end
       
     end
@@ -65,7 +65,7 @@ describe Runnable do
       $1.to_i.should == @my_command.pid
       
       # Check if the process name is the same of our command class
-      $4.should == @my_command.class.to_s.split( "::" ).last.downcase      
+      $4.should == @my_command.command.to_s.split( "::" ).last.downcase      
     end
    
     it "should know if a process is running on the system" do
@@ -123,7 +123,8 @@ describe Runnable do
      
       seconds = rand(10)
       # Create and launch the command
-      @my_command = Sleep.new( {:command_options => seconds} )
+      @my_command = Sleep.new
+      @my_command.options = seconds
 
       time_before = Time.now
       @my_command.run
@@ -145,7 +146,8 @@ describe Runnable do
   
   describe "redirect the stdout and stderr streams" do
     it "should print the output of the command in a log file" do
-      @my_command = LS.new( {:delete_log => false} )
+      @my_command = LS.new
+      @my_command.log_path = "/var/log/runnable/"
       @my_command.run
       
       @my_command.join
@@ -154,7 +156,7 @@ describe Runnable do
       # Recover the content of the log file      
       my_command_output = []
       
-      log = File.open("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log", "r") 
+      log = File.open("/var/log/runnable/#{@my_command.command.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log", "r") 
       log.each_line do |line|
         # Get the last part of each line in the log file
         my_command_output.push line.split(" ").last
@@ -169,18 +171,22 @@ describe Runnable do
     end
     
     it "should print the standard error of the command in a log file" do
-      @my_command = LS.new(
-         {:command_options => "-invalid_option",
-          :delete_log => false})
+      @my_command = LSNoExceptions.new
+      @my_command.log_path = "/var/log/runnable/"
+      @my_command.options = "-invalid_option"
           
-      @my_command.run
-
-      @my_command.join
+      # Ignore the exception
+      begin
+        @my_command.run
+        @my_command.join
+      rescue
+        # Exception raised: ignoring
+      end
       
       # Recover the content of the log file 
       my_command_output = []
 
-      log = File.open("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log", "r") 
+      log = File.open("/var/log/runnable/#{@my_command.command.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log", "r") 
       log.each_line do |line|
         # Get the non matched part of the line
         line =~ /\[.*\]\s(.+)/
@@ -203,7 +209,8 @@ describe Runnable do
     end
 
     it "should store the standar output in a instance variable" do
-      @my_command = LS.new( {:delete_log => false} )
+      @my_command = LS.new
+      @my_command.log_path = "/var/log/runnable/"
       @my_command.run
       
       @my_command.join
@@ -216,13 +223,17 @@ describe Runnable do
     end
     
     it "should store the error output in a instance variable" do
-      @my_command = LS.new(
-         {:command_options => "-invalid_option",
-          :delete_log => false})
+      @my_command = LSNoExceptions.new
+      @my_command.log_path = "/var/log/runnable/"
+      @my_command.options = "-invalid_option"
           
-      @my_command.run
+      begin
+        @my_command.run
+        @my_command.join       
+      rescue
+        # ...
+      end
 
-      @my_command.join       
       # Get the system command output
 
       # Get pipes to redirect IO
@@ -238,56 +249,61 @@ describe Runnable do
   end
 
   describe "managing log files" do
-    it "Should delete log files by default" do
-      @my_command = BC.new()
-
+    it "should not save log files by default" do
+      @my_command = LS.new
       
       @my_command.run
-
-      # Check that log file exist
-      File.exist?("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_true
- 
       @my_command.kill
+
       # Check if log file is deleted
-      File.exist?("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_false
+      File.exist?("/var/log/runnable/#{@my_command.command.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_false
       
     end
 
-    it "should not delete log files if we don't want it explicity" do
-      @my_command = BC.new( {:delete_log => false} )
+    it "should save log files if we specify the path" do
+      @my_command = LS.new
+      @my_command.log_path = "/var/log/runnable/"
 
       @my_command.run
-      
-      # Check that log file exist
-      File.exist?("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_true
-
       @my_command.kill
-      # Check that log file is removed
-      File.exist?("/var/log/runnable/#{@my_command.class.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_true
       
+      # Check that log file is removed
+      File.exist?("/var/log/runnable/#{@my_command.command.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_true
+    end
+
+    it "should not save anything when there is nothing to save" do
+      @my_command = BC.new
+      @my_command.log_path = "/var/log/runnable/"
+
+      @my_command.run
+      @my_command.kill
+      
+      # Check that log file is removed
+      File.exist?("/var/log/runnable/#{@my_command.command.to_s.split( "::" ).last.downcase}_#{@my_command.pid}.log").should be_false
     end
   end
 
   describe "controlling exceptions" do
     it "should not return any exceptions array" do
-      @my_command = LS.new( {:command_options => '-lah', :delete_log => false} )
+      @my_command = LS.new
+      @my_command.log_path = "/var/log/runnable"
+      @my_command.options = "-lah"
       
-      # Set what must happen when getting a fire
-
-      # Example should pass when we get a fire :finish
-      @my_command.should_receive( :finish )
-
-      @my_command.run
-      @my_command.join
+      lambda {
+        @my_command.run
+        @my_command.join
+      }.should_not raise_error
     end
     
     it "should return an argument exception" do
-      @my_command = LS.new( {:command_options => '-invalid_option', :delete_log => false} )
+      @my_command = LS.new
+      @my_command.log_path = "/var/log/runnable"
+      @my_command.options = "-invalid_option"
 
-      @my_command.should_receive( :failed )
-
-      @my_command.run 
-      @my_command.join
+      lambda {
+        @my_command.run 
+        @my_command.join
+      }.should raise_error( ArgumentError )
     end
   end
 
@@ -400,7 +416,8 @@ describe Runnable do
 
   describe "Calculate CPU usage" do
     it "should return the current cpu usage 100%" do
-      @my_bc = BC.new( :command_options => "examples_helpers/bc_big_operation" )
+      @my_bc = BC.new
+      @my_bc.options = "examples_helpers/bc_big_operation"
 
       @my_bc.run
       
@@ -409,13 +426,15 @@ describe Runnable do
       my_cpu_usage = `ps --pid #{@my_bc.pid} u`.split( "\n" )[1].split( " " )[2].to_f
 
       # We want a tolerance of 5%
-      @my_bc.cpu.should be_within( 5 ).of( my_cpu_usage )
+      @my_bc.cpu.should be_within( 15 ).of( my_cpu_usage )
       @my_bc.kill
       end
 
-    it "Should return the current cpu usage (random)" do
+    it "should return the current cpu usage (random)" do
       # We are going to use command line vlc for this example
-      @my_vlc = CVLC.new(:command_options => "examples_helpers/song.mp3", :delete_log => false)
+      @my_vlc = CVLC.new
+      @my_vlc.options = "examples_helpers/song.mp3"
+      @my_vlc.log_path = "/var/log/runnable/"
 
       @my_vlc.run
       # Wait until all is loaded, to avoid different measures
@@ -434,18 +453,19 @@ describe Runnable do
 
   describe "Bandwidth usage" do
     it "should return a number in kb/s" do
+      @iface = "wlan0"
       # This test would have to be changed, too many harcoded options
-      @my_vlc = CVLC.new( :command_options => "vlc://quit" )
-
-      @my_vlc.input = "http://root:lirio@172.16.8.11/video.mjpg"
-      @my_vlc.sout "#std{access=file,mux=ts,dst=./examples_helpers/video.mjpg}"
+      @my_vlc = Wget.new
+      @my_vlc.options = "http://distfiles.gentoo.org/releases/sparc/autobuilds/current-iso/install-sparc64-minimal-20111226.iso"
 
       @my_vlc.run
       
-      sleep 7
-      @my_vlc.bandwidth( "eth0" ).should be_between( 50, 3000 )
+      sleep 3
+
+      @my_vlc.bandwidth( @iface ).should be_between( 50, 3000 )
       
       @my_vlc.stop
+      @my_vlc.join
     end
   end
 
@@ -457,33 +477,19 @@ describe Runnable do
 
       @my_bc.run
 
-      sleep 2
+      sleep 1
       
       # If all goes well bc should be calculating 2^10000000
-      @my_bc.cpu.should be_within( 5 ).of( 100 )
+      @my_bc.cpu.should > 0
 
       @my_bc.kill
     end
-    it "should save the output to a file" do
-      @my_bc = BC.new
-
-      @my_bc.input = "./examples_helpers/bc_small_operation"
-      @my_bc.output = "> ./examples_helpers/bc_output"
-
-      @my_bc.run
-
-      @my_bc.join
-
-      my_output = File.open( "./examples_helpers/bc_output" ).read.chomp
-
-      my_output.should be_eql( "1024" )
-    end
-
   end
 
   describe "Command options as methods-like in the class" do
     it "should parse the options passed as methods" do
-      @my_find = Commands::Find.new( { :delete_log => false } )
+      @my_find = Commands::Find.new
+      @my_find.log_path = "/var/log/runnable/"
 
       @my_find.depth
       @my_find.iname "*.rb"
@@ -502,36 +508,9 @@ describe Runnable do
       #File.delete( "./examples_helpers/command_output.log" )    
     end
 
-    it "should not parse methods whit two or more parameters" do
-      @my_find = Commands::Find.new
-      lambda{
-        @my_find.options( "option1", "option2" )
-        }.should raise_error( NoMethodError )
-      @my_find.run
-    end
-
-    it "should parse an undefined method with a hash as argument" do
-      @my_find = Commands::Find.new
-      lambda { 
-        @my_find.options( { :depth => nil, :iname => '*.rb', :type => 'f' } )
-        }.should_not raise_error ( Exception )
-
-      @my_find.fprint './examples_helpers/command_output.log'
-      @my_find.run
-
-      @my_find.join
-
-      # Now we have a file with all rb files in current directory
-      # and in childs
-      output = File.open( "examples_helpers/command_output.log" ).read.split( "\n" )
-
-      `find -depth -iname "*.rb" -type "f"`.split( "\n" ).should ==  output
-      
-      File.delete( "examples_helpers/command_output.log" )
-    end
-
     it "should parse gnu params if no command style is set" do
-      @my_gcc = Commands::GCC.new( :delete_log => false )
+      @my_gcc = Commands::GCC.new
+      @my_gcc.log_path = "/var/log/runnable/"
       @my_gcc.input = 'examples_helpers/program.c'
       @my_gcc.o "examples_helpers/gcc_output"
       @my_gcc.run
@@ -544,31 +523,22 @@ describe Runnable do
     end
   end
 
-# This is obsolete since we dont use sh -c call anymore
-=begin
-  describe "Behavior with child processes" do
-    it "should send a signal to every child process" do
-      @my_vlc = Commands::VLC.new( :delete_log => false)
-      @my_vlc.input = "http://xxxx:xxxx@172.16.8.11/video.mjpg --sout '#std{access=file, mux=ts, dst=video.mjpg}' -I dummy"
-      @my_vlc.run
+  describe "User defined commands" do
+    it "should block process flow when specified" do
+      @my_nmap = MyNMAP.new
+      @my_nmap.scan("192.168.1.1", "24")
+      @my_nmap.running?.should be_false
+    end
 
-      # There should be 2 processes, a sh and a child vlc  
-      child_pid = nil
-      `ps -ef`.each_line do |line|
-        child_pid = line.split[1] if line.split[2].to_i == @my_vlc.pid
-      end
+    it "should raise specified exceptions" do
+      @my_nmap = MyNMAP.new
+      lambda { @my_nmap.scan("192.168.1.1", "1000") }.should raise_error
+    end
 
-      sleep 5
-      @my_vlc.send_signal( :SIGHUP )
-
-      # Those 2 processes should no exist anymore
-      `ps -ef`.each_line do |line|
-        line.split[1].to_i.should_not == child_pid
-        line.split[1].to_i.should_not == @my_vlc.pid
-      end
-
-      File.delete( "video.mjpg" )
+    it "should store the user define outputs" do
+      @my_nmap = MyNMAP.new
+      res = @my_nmap.scan("192.168.1.1", "24")
+      res.length.should > 0
     end
   end
-=end
 end

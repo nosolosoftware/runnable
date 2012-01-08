@@ -6,4 +6,3 @@ require 'runnable'
 
 require 'commands'
 include Commands
-

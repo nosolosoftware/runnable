@@ -19,20 +19,102 @@
 require 'runnable/gnu'
 require 'runnable/extended'
 require 'fileutils'
-require 'logger'
 
 # Convert a executable command in a Ruby-like class
 # you are able to start, define params and send signals (like kill, or stop)
 #
 # @example Usage:
-#   class LS < Runnable
+#   class LS 
+#     include Runnable
+#
+#     executes :ls
 #     command_style :extended
 #   end
 #
 #   ls = LS.new
 #   ls.alh
 #   ls.run
-class Runnable  
+module Runnable  
+  def self.included(klass)
+    klass.extend ClassMethods
+  end
+
+  module ClassMethods
+    # Define the command to be executed
+    # @return [nil]
+    # @param [Symbol] command Command to be executed
+    def executes( cmd )
+      define_method( :command ) { cmd }
+    end
+ 
+    # Define the parameter style to be used.
+    # @return [nil]
+    def command_style( style )
+      define_method( :command_style ) { style }
+    end
+ 
+    # Create a user definde command
+    # @return [nil]
+    # @param [Symbol] name The user defined command name
+    # @param [Hash] options Options.
+    # @option options :blocking (false) Describe if the execution is blocking or non-blocking
+    # @option options :log_path (false) Path used to store logs # (dont store logs if no path specified)
+    def define_command( name, opts = {}, &block )
+      blocking = opts[:blocking] || false
+      log_path = opts[:log_path] || false
+
+      commands[name] = { :blocking => blocking }
+
+      define_method( name ) do |*args|
+        run name, block.call(*args), log_path
+        join if blocking
+      end
+    end
+ 
+    # Generic command processor. It allows to define generic processors used in all the
+    # user defined commands
+    # @param [Hash] opts Processing options
+    # @option opts :outputs (nil) Output processing Hash (regexp => output)
+    # @option opts :exceptions (nil) Exceptions processing Hash (regexp => exception)
+    def processors( opts = nil )
+      if opts.is_a? Hash
+        @processors = opts
+      else
+        @processors ||= Hash.new
+      end
+    end
+
+    # Method missing processing for the command processors
+    def method_missing( name, *opts )
+      raise NoMethodError.new( name.to_s ) unless name.to_s =~ /([a-z]*)_([a-z]*)/
+ 
+      # command_processors
+      if $2 == "processors"
+        commands[$1.to_sym][:outputs] = opts.first[:outputs]
+        commands[$1.to_sym][:exceptions] = opts.first[:exceptions]
+      end
+    end
+
+    # @group Accessors for the module class variables
+ 
+    # Returns the user defined commands
+    # @return [Hash] commands User defined commands
+    def commands
+      @commands ||= Hash.new
+    end
+ 
+    # Returns the list of runnable instances by pid
+    # @return [Hash] list of runnable instances by pid
+    def processes
+      @processes ||= Hash.new
+    end
+
+    # Processes writer
+    def processes=( value )
+      @processes = value
+    end
+  end
+  
   # Process id.
   attr_reader :pid
   # Process owner.
@@ -42,123 +124,53 @@ class Runnable
   # Directory where process was called from.
   attr_reader :pwd
 
-  # Input file
-  attr_accessor :input
+  # Process output
+  attr_reader :output
 
-  # Set the output file
-  attr_accessor :output
+  # Process options
+  attr_accessor :options
+  # Process log output
+  attr_accessor :log_path
 
   # Metaprogramming part of the class
-  
-  # Define the parameter style to be used.
-  # @return [nil]
-  def self.command_style( style )
-    define_method( :command_style ) do
-      style
-    end
-  end
-  
+
   # Parameter style used for the command.
   # @return [Symbol] Command style.
   def command_style
     :gnu
   end
 
-  # List of runnable instances running on the system order by pid.
-  @@processes = Hash.new
+  # Default command to be executed
+  # @return [String] Command to be executed
+  def command
+    self.class.to_s.split( "::" ).last.downcase
+  end
 
   # Constant to calculate cpu usage.
   HERTZ = 100
 
-  # Create a new instance of a runnable command.
-  # @param [Hash] option_hash Options.
-  # @option option_hash :delete_log (true) Delete the log after execution.
-  # @option option_hash :command_options ("") Command options.
-  # @option option_hash :log_path ("/var/log/runnable") Path for the log files.
-  def initialize( option_hash = {} )
-    # Initialize the ruby logger
-    @logger = Logger.new(STDOUT)
-    @logger.level = option_hash[:debug] ? Logger::DEBUG : Logger::WARN
-
-    # keys :delete_log
-    #      :command_options
-    #      :log_path
-    
-    # If we have the command class in a namespace, we need to remove
-    # the namespace name
-    @command = self.class.to_s.split( "::" ).last.downcase
-    
-    # Set the default command option
-    # Empty by default
-    option_hash[:command_options] ||= ""
-    @options = option_hash[:command_options]
-    
-    # Set the log path
-    # Default path is "/var/log/runnable"
-    option_hash[:log_path] ||= "/var/log/runnable/"
-    @log_path = option_hash[:log_path]
-
-    # Set the delete_log option
-    # true by default
-    if option_hash[:delete_log] == nil
-      @delete_log = true
-    else 
-      @delete_log = option_hash[:delete_log]
-    end
-
-    # Store input options
-    @input = String.new
-
-    # Store output options
-    @output = String.new
-
-    # Standar Outputs
-    @std_output = {
-      :out => "",
-      :err => ""
-      }
-
-    # @todo: checks that command is in the PATH
-    # ...
-    
-    # we dont set the pid, because we dont know until run
-    @pid = nil
-    @excep_array = []
-    @outputs = Hash.new
-    
-
-    # Metaprogramming part  
-    # Create a new instance of the parser class
-    @command_line_interface = Object.const_get( command_style.to_s.capitalize.to_sym ).new
-    # End Metaprogramming part
-   
-    #End of initialize instance variables
-   
-    create_log_directory
-  end
-  
   # Start the execution of the command.
   # @return [nil]
-  def run
+  def run(name = nil, opts = nil, log_path = nil)
     # Create a new mutex
     @pid_mutex = Mutex.new
+    
+    # Log path should be an instance variable to avoid a mess
+    @log_path = log_path || @log_path
 
     # Create pipes to redirect Standar I/O
     out_rd, out_wr = IO.pipe
     # Redirect Error I/O
     err_rd, err_wr = IO.pipe
-   
+
     # Reset exceptions array to not store exceptions for
     # past executions
+    command_argument = opts ? opts.split(" ") : compose_command
 
-    command = compose_command
-
-    @logger.debug("Running #{@command} #{command}")
-
-    @pid = Process.spawn( @command, *command, { :out => out_wr, :err => err_wr } )
+    @pid = Process.spawn( command.to_s, *command_argument, { :out => out_wr, :err => err_wr } )
 
     # Include instance in class variable
-    @@processes[@pid] = self
+    self.class.processes[@pid] = self
 
     # Prepare the process info file to be read
     file_status = File.open( "/proc/#{@pid}/status" ).read.split( "\n" )
@@ -166,46 +178,36 @@ class Runnable
     @owner = file_status[6].split( " " )[1]
     # Group: Read the Group owner from /proc/@pid/status
     @group = file_status[7].split( " " )[1]
-   
+
     # Set @output_thread with new threads
     # wich execute the input/ouput loop
-    create_logs(:out => [out_wr, out_rd], :err => [err_wr, err_rd])
-    
-    # Create a new thread to avoid blocked processes
-    @run_thread = Thread.new do
-      # Wait to get the pid process even if it has finished
-      Process.wait( @pid, Process::WUNTRACED )
+    stream_info = {
+      :out => [out_wr, out_rd],
+      :err => [err_wr, err_rd]
+    }
 
-      # Wait each I/O thread
-      @output_threads.each { |thread| thread.join }
-      # Delete log if its necesary
-      delete_log
-
-      # Get the exit code from command
-      exit_status = $?.exitstatus
-      
-      # In case of error add an Exception to the @excep_array
-      @excep_array << SystemCallError.new( exit_status ) if exit_status != 0
-      
-      # Call methods according to the exit code
-      if @excep_array.empty?
-        finish
-      else
-        failed( @excep_array )
-      end
-      
-      # This instance is finished and we remove it
-      @@processes.delete( @pid )
+    if name
+      cmd_info = self.class.commands[name]
+      stream_processors = {
+        :outputs => cmd_info[:outputs],
+        :exceptions => cmd_info[:exceptions]
+      }
     end
-    
+
+    output_threads = process_streams( stream_info, stream_processors )
+
+    # Create a new thread to avoid blocked processes
+    @run_thread = threaded_process(@pid, output_threads)
+
     # Satuts Variables
     # PWD: Current Working Directory get by /proc/@pid/cwd
     # @rescue If a fast process is runned there isn't time to get
     # the correct PWD. If the readlink fails, we retry, if the process still alive
     # until the process finish.
+
     begin
-      @pwd = File.readlink( "/proc/#{@pid}/cwd" )
-    rescue
+      @pwd ||= File.readlink( "/proc/#{@pid}/cwd" )
+    rescue Errno::ENOENT
       # If cwd is not available rerun @run_thread
       if @run_thread.alive?
         #If it is alive, we retry to get cwd
@@ -215,6 +217,8 @@ class Runnable
         #If process has terminated, we set pwd to current working directory of ruby
         @pwd = Dir.getwd
       end
+    rescue #Errno::EACCESS
+      @pwd = Dir.getwd
     end
   end
   
@@ -244,7 +248,7 @@ class Runnable
   # @return [nil]
   def join
     @run_thread.join if @run_thread.alive?
-    @outputs unless @outputs.empty?
+    @output unless @output.empty?
   end
 
   # Check if prcess is running on the system.
@@ -256,13 +260,25 @@ class Runnable
   # Standar output of command
   # @return [String] Standar output
   def std_out
-    @std_output[:out]
+    @std_out ||= ""
   end
 
   # Standar error output of the command
   # @return [String] Standar error output
   def std_err
-    @std_output[:err]
+    @std_err ||= ""
+  end
+
+  # Sets the command input to be passed to the command execution
+  # @param [String] opt Command input
+  def input=( opt )
+    @command_input = opt
+  end
+
+  # Sets the command output to be passed to the command execution
+  # @param [String] opt Command output
+  def output=( opt )
+    @command_output = opt
   end
 
   # Calculate the estimated memory usage in Kb.
@@ -303,7 +319,6 @@ class Runnable
       # Seconds is Zero!
       0
     end
-
   end
 
   # Estimated bandwidth in kb/s.
@@ -342,6 +357,8 @@ class Runnable
   # @param [Block] block Block code in method
   # @return [nil]
   def method_missing( method, *params, &block )
+    @command_line_interface ||= Object.const_get( command_style.to_s.capitalize.to_sym ).new
+
     if params.length > 1
       super( method, params, block )
     else
@@ -362,51 +379,6 @@ class Runnable
     @@processes
   end
  
-  # @abstract 
-  # Returns a hash of regular expressions and outputs associated to them.
-  # Command output is match against those regular expressions, if it does match
-  # then the result is collected into an array that is returned when join() is called. 
-  # @note This method should be overwritten in child classes.
-  # @see exceptions
-  # @return [Hash] Using regular expressions as keys and exceptions that should
-  #   be stored.
-	def outputs
-    {}
-  end
-
-  # @abstract 
-  # Returns a hash of regular expressions and exceptions associated to them.
-  # Command output is match against those regular expressions, if it does match
-  # an appropiate exception is included in the return value of execution. 
-  # @note This method should be overwritten in child classes.
-  # @example Usage:
-  #   class ls < Runnable
-  #     def exceptions
-  #       { /ls: (invalid option.*)/ => ArgumentError }
-  #     end
-  #   end
-  #
-  # @return [Hash] Using regular expressions as keys and exceptions that should
-  #   be raised as values.
-	def exceptions
-    {}
-  end
-  
-  # @abstract
-  # Method called when command ends with no erros.
-  # This method is a hook so it should be overwritten in child classes.
-  # @return [nil]
-  def finish
-  end
-
-  # @abstract
-  # Method called when command executions fail.
-  # This method is a hook so it should be overwritten in child classes.
-  # @param [Array] exceptions Array containing exceptions raised during the command execution.
-  # @return [nil]
-  def failed( exceptions )
-  end
-  
   # Send the desired signal to the command.
   # @param [Symbol] Signal to be send to the command.
   # @todo raise ESRCH if pid is not in system
@@ -436,46 +408,21 @@ class Runnable
   end
 
   protected
-  # Redirect command I/O to log files.
+  # Process the command I/O.
   # These files are located in /var/log/runnable.
   # @param [Hash] Outputs options.
   # @option outputs stream [Symbol] Stream name.
   # @option outputs pipes [IO] I/O stream to be redirected.
-  # @return [nil]
-  def create_logs( output_streams = {} )
-    # Create an empty file for logging
-    FileUtils.touch "#{@log_path}/#{@command}_#{@pid}.log"
+  # @return [Array] output_threads Array containing the output processing threads
+  def process_streams( output_streams = {}, stream_processors = nil )
+    @output = Hash.new
+    @std_output = Hash.new
 
-    @output_threads = []
+    output_threads = []
     # for each io stream we create a thread wich read that 
     # stream and write it in a log file
-    output_streams.each do |output_name, pipes|
-      @output_threads << Thread.new do
-        pipes[0].close
-
-        @std_output[output_name] = ""
-
-        pipes[1].each_line do |line|
-          @std_output[output_name] << line
-
-          File.open("#{@log_path}/#{@command}_#{@pid}.log", "a") do |log_file|
-            log_file.puts( "[#{Time.new.inspect} || [STD#{output_name.to_s.upcase} || [#{@pid}]] #{line}" )
-          end
-          # Match custom exceptions
-          # if we get a positive match, add it to the exception array
-          # in order to inform the user of what had happen
-          exceptions.each do | reg_expr, value |
-            @logger.debug(reg_expr)
-            @logger.debug(line)
-  					@excep_array << value.new( $1 ) if reg_expr =~ line
-          end
-
-          outputs.each do | reg_expr, value |
-            @outputs[value] ||= Array.new
-            @outputs[value] << $1 if reg_expr =~ line
-          end
-        end
-      end
+    output_streams.collect do |output_name, pipes|
+      threaded_output_processor(output_name, pipes, stream_processors)
     end
   end
   
@@ -486,34 +433,81 @@ class Runnable
   def parse_hash( hash )
     hash.each do |key, value|
       # Add the param parsed to command_line_interface
-      @command_line_interface.add_param( 
-        key.to_s,
-        value != nil ? value.to_s : nil 
-        )
+      @command_line_interface.add_param( key.to_s, value != nil ? value.to_s : nil )
     end
   end
 
   private
 
-  def create_log_directory
+  def save_log(output_name, line)
     Dir.mkdir( @log_path ) unless Dir.exist?( @log_path )
-  end
-  
-  def delete_log
-    File.delete( "#{@log_path}#{@command}_#{@pid}.log" ) if @delete_log == true
+
+    File.open("#{@log_path}/#{self.command}_#{@pid}.log", "a") do |log_file|
+      log_file.puts( "[#{Time.new.inspect} || [STD#{output_name.to_s.upcase} || [#{@pid}]] #{line}" )
+    end
   end
 
   def compose_command
-    command = Array.new
+    @command_line_interface ||= Object.const_get( command_style.to_s.capitalize.to_sym ).new
 
-    command << @input.to_s
-    command << @options.to_s
-    command << @command_line_interface.parse
-    command << @output.to_s
-    command.flatten!
-    
-    command.select do |value|
+    [ @command_input.to_s, 
+      @options.to_s, 
+      @command_line_interface.parse, 
+      @command_output.to_s 
+    ].select do |value|
       !value.to_s.strip.empty?
+    end.flatten.select{|x| !x.empty?}
+  end
+
+  def threaded_process(pid, output_threads)
+    Thread.new do
+      # Wait to get the pid process even if it has finished
+      Process.wait( pid, Process::WUNTRACED )
+
+      # Wait each I/O thread
+      output_threads.each { |thread| thread.join }
+
+      # Get the exit code from command
+      exit_status = $?.exitstatus
+
+      # This instance is finished and we remove it
+      self.class.processes.delete( pid )
+
+      # In case of error add an Exception to the @excep_array
+      raise SystemCallError.new( exit_status ) if exit_status != 0
     end
   end
+
+  def threaded_output_processor(output_name, pipes, stream_processors)
+    exception_processors = stream_processors.is_a?(Hash) ? stream_processors[:exceptions] : {}
+    exception_processors.merge!(self.class.processors[:exceptions] || {})
+
+    output_processors = stream_processors.is_a?(Hash) ? stream_processors[:outputs] : {}
+    output_processors.merge!(self.class.processors[:output] || {})
+        
+    Thread.new do
+      pipes[0].close
+
+      pipes[1].each_line do |line|
+        ( output_name == :err ? self.std_err : self.std_out ) << line
+
+        save_log(output_name, line) if @log_path
+        
+        # Match custom exceptions
+        # if we get a positive match, raise the exception
+        exception_processors.each do | reg_expr, value |
+          raise value.new( line ) if reg_expr =~ line
+        end
+         
+        # Match custom outputs
+        # if we get a positive match, add it to the outputs array
+        output_processors.each do | reg_expr, value |
+          @output[value] ||= Array.new
+          @output[value] << $1 if reg_expr =~ line
+        end
+
+      end
+    end
+  end
+  
 end

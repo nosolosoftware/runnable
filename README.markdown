@@ -5,10 +5,17 @@ A Ruby gem that allow programmer to control UNIX system commands as a Ruby class
 All you have to do is to create a class named exactly as command and make it 
 inherit from class Runnable.
 
-    class LS < Runnable
+    class LS
+      include Runnable
     end
 
 That gives you the basics to control the execution of ```ls``` command.
+You can overwrite the name of the command by using the ```executes``` macro:
+    class MyLs
+      include Runnable
+
+      executes :ls
+    end
 
 Now you can create an instance like this:
 
@@ -23,53 +30,51 @@ for some important information about the command and its process. Entire
 documentation of this gem can be generated using ```yardoc```. To do this use 
 ```rake doc```.
 
-## Return values
-Runnable has two special methods which are called at the end of a command execution.  
-```:finish``` if commands finalized in a correct way and ```:fail``` if an error 
-ocurred. In case something went wrong and a ```:fail``` method is called, Runnable 
-also provide an array containing the command return value as the parameter of a 
-SystemCallError exception and optionally others exceptions ocurred at runtime.
+## Custom output and exceptions
+Runnable parse a set of user defined regular expresion to set up the command return
+values.
 
 This is an example of how we can receive the return value of a command:
 
-    class LS < Runnable
+    class Nmap
+      include Runnable
+      
+      executes :nmap
 
-      def finish
-        puts "Everything went better than expected :)"
-      end
-
-      def failed( exceptions )
-        puts "Something went wrong :("
-        exceptions.each do |exception|
-          puts exception.message
-        end   
-      end
-
+      define_command( :scan, :blocking => true ) { |ip, subnet| "-sP #{ip}/#{subnet}" }
+      scan_processors(
+        :exceptions => { /^Illegal netmask value/ => ArgumentError },
+        :outputs => { /Nmap scan report for (.*)/ => :ip }
+      )
     end
 
-    my_command = LS.new    
-    my_command.run
+    Nmap.new.scan("192.168.1.1", "24") # should return an array with the ips
 
-## Custom exceptions
-As we saw in previous chapter, if a command execution does not ends 
-succesfully, Runnable fires a ```:fail``` event whit an exceptions array. We can
-add exceptions to that array based on the output of command. For example, we 
-can controll that parameters passed to a command are valids if we know the 
-command output for an invalid parameters.
+Runnable can also raise custom exceptions, using the previously Nmap defined class:
+    Nmap.new.scan("192.168.1.1", "1000")
+Will raise an ArgumentError exception.
+Note that Runnable will also raise an exception if the command returned value is not 0.
 
-First we have to do is override the method ```exceptions``` defined in runnable
-as follows
+## Background usage
+Runnable can be used with background process:
 
-    class LS < Runnable
-      def exceptions
-        { /ls: (invalid option.*)/ => ArgumentError }
-      end
+    class Ping
+      include Runnable
+
+      define_command( :goping, :blocking => false) { "-c5 www.google.es" }
+
+      goping_processors(
+        :outputs => { /64 bytes from .* time=(.*) ms/ => :time  }
+      )
     end
 
-```exceptions``` method should return a hash containing a regular expression 
-which will be match against the command output, and a value which will be the
-exception added to exception array. This means that if the command output match
-the regular expression, a new exception will be include in ```:fail``` event parameter.
+    p = Ping.new
+    p.goping
+
+    while p.running?
+      p p.output[:time]
+      sleep 1
+    end
 
 # About
 Runnable is a gem developed by [NoSoloSoftware](http://nosolosoftware.biz).

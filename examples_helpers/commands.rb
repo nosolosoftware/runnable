@@ -1,81 +1,96 @@
 # This module contains different classes that represents system commands
 module Commands
-  class DC < Runnable
+  class MyNMAP
+    include Runnable
+
+    executes :nmap
+
+    define_command( :scan, :blocking => true ) { |ipaddr, subnet| "-sP #{ipaddr}/#{subnet}" }
+    scan_processors(
+      :exceptions => { /^Illegal netmask value/ => ArgumentError },
+      :outputs => { /Nmap scan report for (.*)/ => :ip }
+    )
   end
 
-  class BC < Runnable
+  class DC
+    include Runnable
+    executes :dc
   end
 
-  class Tail < Runnable
+  class BC
+    include Runnable
+    executes :bc
   end
 
-  class Read < Runnable
+  class Tail
+    include Runnable
+    executes :tail
   end
 
-  class Yes < Runnable
-    def initialize( opts = {} )
-      super( opts )
-    end
+  class Read
+    include Runnable
+    executes :read
   end
 
-  class VLC < Runnable
-    def initialize( opts = {} )
-      super( opts )
-    end
+  class Yes
+    include Runnable
+    executes :yes
   end
 
-  class Sleep < Runnable
-    def initialize( opts = {} )
-      super( opts )
-    end
+  class VLC
+    include Runnable
+    executes :vlc
   end
 
-  class Grep < Runnable
-    def initialize( opts = {} )
-      super( opts )
-    end
+  class Sleep
+    include Runnable
+    executes :sleep
   end
 
-  class LS < Runnable
-    def initialize( opts = {} )
-      super( opts )
-    end
-    
-    def exceptions
-      { 
-      /ls: (.*)/ => ArgumentError
-      }
-    end
-
-    def failed( exceptions )
-    end
-
-    def finish
-    end
+  class Grep
+    include Runnable
+    executes :grep
   end
 
-  class Find < Runnable
+  class LSNoExceptions
+    include  Runnable
+      
+    executes :ls
+  end
+
+  class LS
+    include  Runnable
+      
+    executes :ls
+
+    processors( :exceptions => { /ls: .*/ => ArgumentError } )
+  end
+
+  class Find
+    include Runnable
+
+    executes :find
     command_style :extended
-    
-    def initialize( opts = {} )
-      super( opts )
-    end
   end
 
-  class CVLC < Runnable
-    command_style :gnu
+  class Wget
+    include Runnable
+    
+    executes :wget
+  end
 
-    def initialize( opts = {} )
-      super( opts )
-    end
+  class CVLC
+    include Runnable
+    
+    executes :cvlc
+    command_style :gnu
   end
  
-  class GCC < Runnable
-    command_style :gnu
+  class GCC
+    include Runnable
 
-    def initialize( opts = {} )
-      super( opts )
-    end
+    executes :gcc
+    command_style :gnu
   end
 
 end
