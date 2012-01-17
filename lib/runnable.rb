@@ -152,6 +152,7 @@ module Runnable
   # Start the execution of the command.
   # @return [nil]
   def run(name = nil, opts = nil, log_path = nil)
+    return false if @pid
     # Create a new mutex
     @pid_mutex = Mutex.new
     
@@ -472,6 +473,7 @@ module Runnable
 
       # This instance is finished and we remove it
       self.class.processes.delete( pid )
+      @pid = nil
 
       # In case of error add an Exception to the @excep_array
       raise SystemCallError.new( exit_status ) if exit_status != 0
