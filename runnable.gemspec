@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Rafael García", "Luis Ciudad", "Pedro Navajas", "Javier Aranda"]
-  s.date = %q{2012-01-17}
+  s.date = %q{2012-01-23}
   s.description = %q{Convert a executable command in a Ruby-like class you are able to start, define params and send signals (like kill, or stop)}
   s.email = ["rgarcia@nosolosoftware.biz", "lciudad@nosolosoftware.biz", "pnavajas@nosolosoftware.biz", "jaranda@nosolosoftware.biz"]
   s.extra_rdoc_files = [
