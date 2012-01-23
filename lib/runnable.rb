@@ -66,7 +66,11 @@ module Runnable
       commands[name] = { :blocking => blocking }
 
       define_method( name ) do |*args|
-        run name, block.call(*args), log_path
+        if block
+          run name, block.call(*args), log_path
+        else
+          run name, nil, log_path
+        end
         join if blocking
       end
     end
@@ -481,10 +485,10 @@ module Runnable
   end
 
   def threaded_output_processor(output_name, pipes, stream_processors)
-    exception_processors = stream_processors.is_a?(Hash) ? stream_processors[:exceptions] : {}
+    exception_processors = stream_processors[:exceptions].is_a?(Hash) ? stream_processors[:exceptions] : {}
     exception_processors.merge!(self.class.processors[:exceptions] || {})
 
-    output_processors = stream_processors.is_a?(Hash) ? stream_processors[:outputs] : {}
+    output_processors = stream_processors[:outputs].is_a?(Hash) ? stream_processors[:outputs] : {}
     output_processors.merge!(self.class.processors[:output] || {})
         
     Thread.new do
