@@ -477,19 +477,24 @@ module Runnable
 
       # This instance is finished and we remove it
       self.class.processes.delete( pid )
-      @pid = nil
+#      @pid = nil
 
       # In case of error add an Exception to the @excep_array
       raise SystemCallError.new( exit_status ) if exit_status != 0
     end
   end
 
-  def threaded_output_processor(output_name, pipes, stream_processors)
-    exception_processors = stream_processors[:exceptions].is_a?(Hash) ? stream_processors[:exceptions] : {}
-    exception_processors.merge!(self.class.processors[:exceptions] || {})
+  def threaded_output_processor(output_name, pipes, stream_processors )
+    exception_processors = {}
+    output_processors = {}
 
-    output_processors = stream_processors[:outputs].is_a?(Hash) ? stream_processors[:outputs] : {}
-    output_processors.merge!(self.class.processors[:output] || {})
+    if stream_processors
+      exception_processors = stream_processors[:exceptions].is_a?(Hash) ? stream_processors[:exceptions] : {}
+      exception_processors.merge!(self.class.processors[:exceptions] || {})
+
+      output_processors = stream_processors[:outputs].is_a?(Hash) ? stream_processors[:outputs] : {}
+      output_processors.merge!(self.class.processors[:output] || {})
+    end
         
     Thread.new do
       pipes[0].close
